@@ -1,6 +1,3 @@
-server:
-  port: ${PORT:8080}
-
 spring:
   application:
     name: outvoice
@@ -24,8 +21,6 @@ jwt:
 app:
   # Set ALLOW_DUPLICATE_SIGNUP=true to skip 409 on repeated sign-ups (dev/test only)
   allow-duplicate-signup: ${ALLOW_DUPLICATE_SIGNUP:false}
-  # Comma-separated list of allowed CORS origins; override if frontend runs on a non-default port
-  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
 
 rate-limit:
   auth:

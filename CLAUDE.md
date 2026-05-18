@@ -60,20 +60,21 @@ Flyway migration scripts go in `src/main/resources/db/migration/` with the stand
 
 `src/main/resources/application.yaml` — currently minimal. Environment-specific values (DB URL, JWT secret, mail credentials) should be provided via environment variables or a local `application-local.yaml` (gitignored).
 
-Required / notable env vars:
+Required properties to run locally:
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/outvoice` | PostgreSQL JDBC URL |
-| `DB_USERNAME` | `postgres` | DB user |
-| `DB_PASSWORD` | *(none)* | DB password |
-| `JWT_SECRET` | *(required)* | Base64-encoded 256-bit HS256 signing key |
-| `JWT_EXPIRY_MS` | `86400000` (24 h) | Token TTL in milliseconds |
-| `PORT` | `8080` | HTTP server port |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:4200` | Comma-separated list of allowed CORS origins |
-| `ALLOW_DUPLICATE_SIGNUP` | `false` | Dev/test: return existing token instead of 409 |
-| `RATE_LIMIT_AUTH_CAPACITY` | `10` | Token bucket size per IP for auth endpoints |
-| `RATE_LIMIT_AUTH_REFILL_SECONDS` | `60` | Refill window in seconds |
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/outvoice
+    username: <user>
+    password: <pass>
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema
+jwt:
+  secret: <base64-encoded-256-bit-key>
+  expiry-ms: 86400000
+```
 
 ## Auth Design
 

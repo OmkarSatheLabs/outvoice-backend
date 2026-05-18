@@ -1,11 +1,5 @@
 # OutVoice Backend — Tasks
 
-## Configuration
-
-### Configurable ports and CORS [DONE]
-- `server.port: ${PORT:8080}` in `application.yaml` — override with `PORT` env var
-- `app.cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}` — comma-separated; injected into `SecurityConfig.corsConfigurationSource()`
-
 ## Auth
 
 ### Sign up [DONE]
