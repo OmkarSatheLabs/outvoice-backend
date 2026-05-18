@@ -71,6 +71,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate   # Flyway owns the schema
+app:
+  cors-allowed-origins: http://localhost:4200
 jwt:
   secret: <base64-encoded-256-bit-key>
   expiry-ms: 86400000

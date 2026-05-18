@@ -1,5 +1,10 @@
 # OutVoice Backend — Tasks
 
+## Configuration
+
+### Configurable CORS [DONE]
+- `app.cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}` — comma-separated; injected into `SecurityConfig.corsConfigurationSource()`
+
 ## Auth
 
 ### Sign up [DONE]
