@@ -124,6 +124,12 @@
 			<artifactId>bucket4j_jdk17-core</artifactId>
 			<version>8.18.0</version>
 		</dependency>
+
+		<!-- AOP — enables @RequiresPermission and @RequiresRole aspects -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

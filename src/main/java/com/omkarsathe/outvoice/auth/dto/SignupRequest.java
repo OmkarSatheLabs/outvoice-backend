@@ -7,12 +7,15 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+// TODO: CONFLICT — V1 SignupRequest included organizationName and tax fields (pan/gst/tan).
+//  The new design creates only a User; org creation is platform-admin-only.
+//  Those fields have been removed. Existing clients sending them will have the extra
+//  fields silently ignored by Jackson.
 @Getter
 @Setter
 @EmailOrMobileRequired
 public class SignupRequest {
 
-    @NotBlank
     private String fullName;
 
     @Email
@@ -23,14 +26,4 @@ public class SignupRequest {
     @NotBlank
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
-
-    @NotBlank
-    private String organizationName;
-
-    // Defaults to fullName in the service if not provided
-    private String taxComplianceName;
-
-    private String panNumber;
-    private String gstNumber;
-    private String tanNumber;
 }

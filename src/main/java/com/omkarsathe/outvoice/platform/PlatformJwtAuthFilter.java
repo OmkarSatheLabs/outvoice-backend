@@ -1,4 +1,4 @@
-package com.omkarsathe.outvoice.security;
+package com.omkarsathe.outvoice.platform;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,22 +10,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Validates org-layer JWTs and populates the SecurityContext with a {@link UserContext} principal.
- * No DB lookup is performed — all user context is read directly from JWT claims.
- */
-@Component
+/** Validates platform JWTs and populates the SecurityContext for /api/platform/** routes. */
 @RequiredArgsConstructor
 @Slf4j
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class PlatformJwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final PlatformJwtService platformJwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,21 +33,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        if (jwtService.isValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (platformJwtService.isValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                UserContext ctx = jwtService.extractUserContext(token);
-
-                // Build authorities from org role (if present)
-                List<SimpleGrantedAuthority> authorities = ctx.role() != null
-                        ? List.of(new SimpleGrantedAuthority("ROLE_" + ctx.role().name()))
-                        : List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                PlatformContext ctx = platformJwtService.extractContext(token);
+                List<SimpleGrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority("ROLE_PLATFORM_" + ctx.role().name()));
 
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(ctx, null, authorities);
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (Exception e) {
-                log.warn("Failed to extract user context from JWT: {}", e.getMessage());
+                log.warn("Failed to extract platform context from JWT: {}", e.getMessage());
             }
         }
 

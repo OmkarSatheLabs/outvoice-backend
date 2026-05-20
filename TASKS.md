@@ -7,51 +7,85 @@
 
 ## Auth
 
-### Sign up [DONE]
+### Sign up [DONE — UPDATED]
 - `POST /api/auth/signup`
-- Fields: full name, email (optional if mobile provided), mobile number (optional if email provided), password, organization name, tax compliance name (defaults to full name), PAN, GST, TAN (all optional)
-- Custom validator `@EmailOrMobileRequired` enforces email-or-mobile constraint
-- Creates `Organization` and `User` records in a single transaction; returns JWT
-- Duplicate guard: if `app.allow-duplicate-signup=true`, returns existing user's token instead of 409
+- Fields: full name (optional), email, mobile number, password
+- **Breaking change from V1**: signup no longer creates an Organisation. V1 fields (organizationName, pan/gst/tan) removed.
+- Creates only a `User` record; returns user-level JWT (no org context)
+- Org creation is now Platform-Admin-only via `POST /api/platform/orgs`
 
-### Login [DONE]
+### Login [DONE — UPDATED]
 - `POST /api/auth/login`
-- Fields: `identifier` (email or mobile number), `password`
-- Looks up user by email or mobile; validates BCrypt password hash; returns JWT on success
-- Returns 401 on bad credentials via `BadCredentialsException → GlobalExceptionHandler`
+- Body: `{ identifier, password }` (email or mobile)
+- Returns:
+  - Single org → org-scoped JWT with orgId/role/permissions claims
+  - Multiple orgs → user-level JWT + `orgs[]` list for org picker
+  - No org → user-level JWT + empty `orgs[]`
+
+### Select Org [DONE]
+- `POST /api/auth/select-org`
+- Requires user-level JWT (after login with multiple orgs)
+- Body: `{ orgId }`
+- Returns org-scoped JWT
+
+### Accept Invite [DONE]
+- `POST /api/auth/invite/accept`
+- Body: `{ token, fullName?, password? }`
+- Creates user if not exists, links to org, returns scoped JWT
 
 ## Security
 
-### JWT infrastructure [DONE]
-- `JwtService` — HS256 token generation and validation via JJWT 0.12.6
-- `JwtAuthFilter` — `OncePerRequestFilter`; extracts Bearer token from `Authorization` header and sets `SecurityContext`
-- `SecurityConfig` — stateless session policy; CORS configured for `http://localhost:4200`; `/api/auth/**` is public; all other routes require authentication
+### JWT infrastructure [DONE — UPDATED]
+- `JwtService` — now emits/parses org context claims (orgId, role, permissions[])
+- `JwtAuthFilter` — extracts `UserContext` from JWT claims (no DB lookup per request)
+- `SecurityConfig` — two filter chains: platform chain (`/api/platform/**`) + org chain
+- `PlatformJwtService` / `PlatformJwtAuthFilter` — separate JWT for platform operators
+- `@CurrentUser` annotation + `CurrentUserArgumentResolver` for clean controller injection
+- `@RequiresRole` + `@RequiresPermission` annotations + `OrgAuthorizationAspect` (AOP)
 
 ## Persistence
 
-### Database schema V1 [DONE]
-- Flyway migration `V1__init_schema.sql`: `organizations` and `users` tables
-- `organizations`: id, name, tax_compliance_name, pan_number, gst_number, tan_number, created_at
-- `users`: id, full_name, email (unique), mobile_number (unique), password_hash, organization_id (FK), created_at
+### Database schema V1 [SUPERSEDED]
+- V1 BIGSERIAL-based schema (organizations, users) — see V1__init_schema.sql
 
-## Error handling
+### Database schema V2 [DONE]
+- Flyway migration `V2__org_role_model.sql`: drops V1 tables, recreates with UUID PKs
+- Tables: organizations, users, org_users, org_invitations, audit_logs, platform_users
+- Partial unique index: `one_owner_per_org` — enforces exactly 1 OWNER per org
 
-### Global exception handler [DONE]
-- `GlobalExceptionHandler` handles `MethodArgumentNotValidException` (400), `DataIntegrityViolationException` (409 duplicate), `BadCredentialsException` (401)
-- All errors return `ApiError` shape: `{ status, message, errors[] }`
+## Org Management [DONE]
 
-## Rate limiting
+### APIs
+- `GET /api/orgs/mine` — user's org list
+- `GET /api/orgs/{orgId}` — org details
+- `GET /api/orgs/{orgId}/members` — members list
+- `POST /api/orgs/{orgId}/members/invite` — invite (MEMBER direct, SUPER_USER pending approval)
+- `GET /api/orgs/{orgId}/invitations/pending` — Owner: pending SUPER_USER approvals
+- `POST /api/orgs/{orgId}/invitations/{id}/approve` — Owner: approve SUPER_USER invite
+- `POST /api/orgs/{orgId}/invitations/{id}/reject` — Owner: reject
+- `PATCH /api/orgs/{orgId}/members/{userId}/permissions` — update MEMBER permissions
+- `PATCH /api/orgs/{orgId}/members/{userId}/role` — change role (Owner only)
+- `DELETE /api/orgs/{orgId}/members/{userId}` — suspend (soft-delete)
+- `POST /api/orgs/{orgId}/transfer` — transfer ownership (password confirm required)
+- `GET /api/orgs/{orgId}/audit-log` — paginated audit log (Owner only)
 
-### Auth endpoint rate limiter [DONE]
-- `RateLimitFilter` — `OncePerRequestFilter` + `@Component`; applies only to `/api/auth/signup` and `/api/auth/login` via `shouldNotFilter()`
-- Per-IP token bucket via Bucket4j 8.10.1 (`bucket4j_jdk17-core`)
-- IP resolved from `X-Forwarded-For` header (first value) or `RemoteAddr` fallback
-- Default: 10 requests per 60-second window per IP; configurable via `RATE_LIMIT_AUTH_CAPACITY` / `RATE_LIMIT_AUTH_REFILL_SECONDS` env vars
-- Returns HTTP 429 with `{ status, message, errors[] }` body matching `ApiError` shape
-- Note: buckets are in-memory (`ConcurrentHashMap`) — not shared across multiple instances; revisit if running replicated
+## Audit Log [DONE]
+- `AuditLogService` — writes to `audit_logs` in a `REQUIRES_NEW` transaction
+- Events: ORG_CREATED, MEMBER_INVITED, INVITE_APPROVED, INVITE_REJECTED, INVITE_ACCEPTED, ROLE_CHANGED, PERMISSIONS_CHANGED, MEMBER_SUSPENDED, OWNERSHIP_TRANSFERRED
+
+## Platform Layer [DONE]
+- Separate login: `POST /api/platform/auth/login`
+- Org CRUD: `POST /api/platform/orgs`, `GET /api/platform/orgs`, `PATCH /{orgId}/suspend`, `PATCH /{orgId}/activate`
+- `PlatformAdminSeeder` — seeds default Super Admin on first run from env vars
+- Separate JWT secret: `PLATFORM_JWT_SECRET`
+
+## Error handling [DONE — UPDATED]
+- Added `BusinessException` (422), `NotFoundException` (404), `AccessDeniedException` (403)
+
+## Rate limiting [DONE]
+- Unchanged from V1
 
 ## Pending
-
 - Invoice entity and PDF generation (OpenPDF dependency present, not wired up)
-- Email notifications (Spring Mail dependency present, not wired up)
-- Protected endpoints (e.g., invoice CRUD) requiring JWT auth
+- Email notifications — invitation emails (Spring Mail dependency present, not wired up)
+- Password reset flow
