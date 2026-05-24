@@ -1,6 +1,8 @@
 package com.omkarsathe.outvoice.user;
 
+import com.omkarsathe.outvoice.country.Country;
 import com.omkarsathe.outvoice.organization.Organization;
+import com.omkarsathe.outvoice.phone.PhoneCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -9,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -20,24 +23,34 @@ import java.util.List;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String fullName;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(unique = true)
     private String email;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "phone_code_id")
+    private PhoneCode phoneCode;
+
     @Column(unique = true)
-    private String mobileNumber;
+    private String mobile;
+
+    @Column(nullable = false)
+    private String fullName;
 
     @Column(nullable = false)
     private String passwordHash;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "organization_id", nullable = false)
-    private Organization organization;
+    @Column(nullable = false)
+    private Boolean isEmailVerified;
+
+    @Column(nullable = false)
+    private Boolean isMobileVerified;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id")
+    private Country country;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -47,9 +60,25 @@ public class User implements UserDetails {
         createdAt = LocalDateTime.now();
     }
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime updatedAt;
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    @Column(updatable = false)
+    private LocalDateTime deletedAt;
+
+    @PreRemove
+    void preRemove() {
+        deletedAt = LocalDateTime.now();
+    }
+
     // The JWT subject — email takes priority over mobile
     public String getPrincipal() {
-        return email != null ? email : mobileNumber;
+        return email != null ? email : mobile;
     }
 
     @Override public String getUsername() { return getPrincipal(); }

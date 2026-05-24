@@ -9,6 +9,6 @@ public class EmailOrMobileRequiredValidator implements ConstraintValidator<Email
 
     @Override
     public boolean isValid(SignupRequest request, ConstraintValidatorContext context) {
-        return StringUtils.hasText(request.getEmail()) || StringUtils.hasText(request.getMobileNumber());
+        return StringUtils.hasText(request.getEmail()) || StringUtils.hasText(request.getMobile());
     }
 }

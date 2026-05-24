@@ -27,6 +27,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/api/auth/login"
     );
 
+    private static final Set<String> RATE_LIMITED_PREFIXES = Set.of(
+            "/api/reference/"
+    );
+
     @Value("${rate-limit.auth.capacity:10}")
     private int capacity;
 
@@ -42,7 +46,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !RATE_LIMITED_PATHS.contains(request.getRequestURI());
+        String uri = request.getRequestURI();
+        boolean exactMatch = RATE_LIMITED_PATHS.contains(uri);
+        boolean prefixMatch = RATE_LIMITED_PREFIXES.stream().anyMatch(uri::startsWith);
+        return !exactMatch && !prefixMatch;
     }
 
     @Override

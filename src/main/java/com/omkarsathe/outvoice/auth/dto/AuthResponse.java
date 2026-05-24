@@ -8,4 +8,6 @@ import lombok.Getter;
 public class AuthResponse {
     private final String token;
     private final String tokenType = "Bearer";
+//    private final String[] orgs;
+//    private final String org;
 }
