@@ -56,7 +56,7 @@ CREATE TABLE users (
     deleted_at         TIMESTAMP DEFAULT null
 );
 
-CREATE TABLE organizations (
+CREATE TABLE workspaces (
     id                  UUID PRIMARY KEY,
     name                VARCHAR(255) NOT NULL,
     slug                VARCHAR(255) NOT NULL UNIQUE,
@@ -66,19 +66,20 @@ CREATE TABLE organizations (
     pan_number          VARCHAR(20),
     gst_number          VARCHAR(20),
     tan_number          VARCHAR(20),
+    status              VARCHAR NOT NULL DEFAULT 'ACTIVE',
     created_by          UUID REFERENCES users,
     created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     deleted_at          TIMESTAMP DEFAULT null
 );
 
-CREATE TABLE user_organizations (
-    id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users,
-    org_id UUID REFERENCES organizations,
-    role VARCHAR NOT NULL,
-    is_default_org BOOLEAN DEFAULT false,
-    invited_by UUID REFERENCES users,
-    joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    status VARCHAR
+CREATE TABLE user_workspaces (
+    id                   UUID PRIMARY KEY,
+    user_id              UUID REFERENCES users,
+    workspace_id         UUID REFERENCES workspaces,
+    role                 VARCHAR NOT NULL,
+    is_default_workspace BOOLEAN DEFAULT false,
+    invited_by           UUID REFERENCES users,
+    joined_at            TIMESTAMP NOT NULL DEFAULT NOW(),
+    status               VARCHAR
 );

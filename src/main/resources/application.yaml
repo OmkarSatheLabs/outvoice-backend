@@ -8,9 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
   flyway:
     enabled: true
 
@@ -19,8 +17,6 @@ jwt:
   expiry-ms: ${JWT_EXPIRY_MS:86400000}
 
 app:
-  # Set ALLOW_DUPLICATE_SIGNUP=true to skip 409 on repeated sign-ups (dev/test only)
-  allow-duplicate-signup: ${ALLOW_DUPLICATE_SIGNUP:false}
   # Comma-separated list of allowed CORS origins; override if frontend runs on a non-default port
   cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
 

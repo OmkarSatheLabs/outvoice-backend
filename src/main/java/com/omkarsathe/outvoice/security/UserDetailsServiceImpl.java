@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -15,7 +17,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) {
-        return userRepository.findByEmailOrMobileIfPresent(username, username)
+        UUID userId = UUID.fromString(username);
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    public UserDetails loadUserByUsernameAndPhoneCode(String mobile, UUID phoneCodeId) {
+        return userRepository.findByMobileAndPhoneCodeId(mobile, phoneCodeId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + mobile));
     }
 }

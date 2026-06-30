@@ -38,6 +38,7 @@ On Windows use `mvnw.cmd` instead of `./mvnw`.
 | PDF generation | OpenPDF 2.0.3 |
 | Email | Spring Mail |
 | Boilerplate reduction | Lombok |
+| Rate limiting | Bucket4j 8.18.0 |
 
 ## Architecture
 
@@ -58,25 +59,24 @@ Flyway migration scripts go in `src/main/resources/db/migration/` with the stand
 
 ## Configuration
 
-`src/main/resources/application.yaml` — currently minimal. Environment-specific values (DB URL, JWT secret, mail credentials) should be provided via environment variables or a local `application-local.yaml` (gitignored).
+`src/main/resources/application.yaml` specifies defaults. Environment-specific values should be provided via environment variables or a local `application-local.yaml` (gitignored).
 
-Required properties to run locally:
+### Required Env Vars & Defaults
+- `DB_URL`: JDBC database URL (default: `jdbc:postgresql://localhost:5432/outvoice`)
+- `DB_USERNAME`: Database username (default: `postgres`)
+- `DB_PASSWORD`: Database password (default: `local-db@123`)
+- `JWT_SECRET`: Base64-encoded 256-bit signing key (required)
+- `JWT_EXPIRY_MS`: JWT expiry in milliseconds (default: `86400000` / 24 hours)
+- `CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (default: `http://localhost:4200`)
+- `RATE_LIMIT_AUTH_CAPACITY`: Max login/signup requests per IP per window (default: `10`)
+- `RATE_LIMIT_AUTH_REFILL_SECONDS`: Refill rate window in seconds (default: `60`)
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/outvoice
-    username: <user>
-    password: <pass>
-  jpa:
-    hibernate:
-      ddl-auto: validate   # Flyway owns the schema
-app:
-  cors-allowed-origins: http://localhost:4200
-jwt:
-  secret: <base64-encoded-256-bit-key>
-  expiry-ms: 86400000
+### Running Tests
+To run tests locally when environment variables are not globally defined, specify them inline (e.g. setting `JWT_SECRET` and setting `JAVA_HOME` if Java 21 is not your default):
+```powershell
+$env:JAVA_HOME="C:\Users\Hp\.jdks\jbr-21.0.10"; $env:JWT_SECRET="dGhpcy1pcy1hLXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LXBVcnBvc2VzLW9ubHk="; .\mvnw.cmd test
 ```
+
 
 ## Auth Design
 

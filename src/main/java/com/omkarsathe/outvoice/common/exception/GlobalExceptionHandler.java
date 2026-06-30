@@ -1,8 +1,10 @@
 package com.omkarsathe.outvoice.common.exception;
 
+import jakarta.validation.UnexpectedTypeException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,9 +48,22 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(ex.getStatusCode().value(), ex.getReason()));
     }
 
+    @ExceptionHandler(UnexpectedTypeException.class)
+    ResponseEntity<ApiError> handleUnexpectedType(UnexpectedTypeException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Validation configuration error: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(HttpStatus.BAD_REQUEST.value(), "Malformed or unreadable request body"));
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> handleGeneric(Exception ex) {
+        System.out.println(ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred"));
+                .body(new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred: " + ex.getMessage()));
     }
 }

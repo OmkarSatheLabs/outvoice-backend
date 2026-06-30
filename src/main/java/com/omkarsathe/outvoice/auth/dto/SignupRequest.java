@@ -31,12 +31,12 @@ public class SignupRequest {
     private UUID userCountryId;
 
     @NotBlank
-    private String organizationName;
+    private String workspaceName;
 
     @NotBlank
-    private String organizationSlug;
+    private String workspaceSlug;
 
-    private UUID organizationCountryId;
+    private UUID workspaceCountryId;
 
     private UUID currencyId;
 
@@ -46,4 +46,8 @@ public class SignupRequest {
     private String panNumber;
     private String gstNumber;
     private String tanNumber;
+
+    public void setMobile(String mobile) {
+        this.mobile = (mobile != null) ? mobile.replaceAll("\\s+", "") : null;
+    }
 }

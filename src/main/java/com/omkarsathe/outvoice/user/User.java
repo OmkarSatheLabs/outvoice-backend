@@ -1,7 +1,6 @@
 package com.omkarsathe.outvoice.user;
 
 import com.omkarsathe.outvoice.country.Country;
-import com.omkarsathe.outvoice.organization.Organization;
 import com.omkarsathe.outvoice.phone.PhoneCode;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +13,18 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "users_mobile_key",
+                        columnNames = {
+                                "phone_code_id",
+                                "mobile"
+                        }
+                )
+        }
+)
 @Getter
 @Setter
 @Builder
@@ -33,7 +43,7 @@ public class User implements UserDetails {
     @JoinColumn(name = "phone_code_id")
     private PhoneCode phoneCode;
 
-    @Column(unique = true)
+    @Column()
     private String mobile;
 
     @Column(nullable = false)
@@ -58,9 +68,10 @@ public class User implements UserDetails {
     @PrePersist
     void prePersist() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     @PreUpdate
@@ -71,17 +82,17 @@ public class User implements UserDetails {
     @Column(updatable = false)
     private LocalDateTime deletedAt;
 
-    @PreRemove
-    void preRemove() {
-        deletedAt = LocalDateTime.now();
-    }
+//    @PreRemove
+//    void preRemove() {
+//        deletedAt = LocalDateTime.now();
+//    }
 
     // The JWT subject — email takes priority over mobile
-    public String getPrincipal() {
-        return email != null ? email : mobile;
-    }
+//    public String getPrincipal() {
+//        return email != null ? email : mobile;
+//    }
 
-    @Override public String getUsername() { return getPrincipal(); }
+    @Override public String getUsername() { return this.id.toString(); }
     @Override public String getPassword() { return passwordHash; }
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return List.of(); }
     @Override public boolean isAccountNonExpired() { return true; }

@@ -1,4 +1,4 @@
-package com.omkarsathe.outvoice.organization;
+package com.omkarsathe.outvoice.workspace;
 
 public enum MemberStatus {
     ACTIVE, INVITED, DEACTIVATED

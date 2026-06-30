@@ -1,4 +1,4 @@
-package com.omkarsathe.outvoice.organization;
+package com.omkarsathe.outvoice.workspace;
 
 import com.omkarsathe.outvoice.country.Country;
 import com.omkarsathe.outvoice.currency.Currency;
@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "organizations")
+@Table(name = "workspaces")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Organization {
+public class Workspace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -43,6 +43,10 @@ public class Organization {
     private String gstNumber;
     private String tanNumber;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private WorkspaceStatus status;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
@@ -55,7 +59,7 @@ public class Organization {
         createdAt = LocalDateTime.now();
     }
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     @PreUpdate

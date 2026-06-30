@@ -1,4 +1,4 @@
-package com.omkarsathe.outvoice.organization;
+package com.omkarsathe.outvoice.workspace;
 
 import com.omkarsathe.outvoice.user.User;
 import jakarta.persistence.*;
@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_organizations")
+@Table(name = "user_workspaces")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserOrganization {
+public class UserWorkspace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,16 +26,16 @@ public class UserOrganization {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "org_id", nullable = false)
-    private Organization org;
+    @JoinColumn(name = "workspace_id", nullable = false)
+    private Workspace workspace;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrgRole role;
+    private WorkspaceRole role;
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isDefaultOrg = false;
+    private Boolean isDefaultWorkspace = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invited_by")
