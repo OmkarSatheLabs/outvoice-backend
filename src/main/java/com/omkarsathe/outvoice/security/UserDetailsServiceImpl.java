@@ -19,11 +19,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) {
         UUID userId = UUID.fromString(username);
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("UserEntity not found: " + username));
     }
 
     public UserDetails loadUserByUsernameAndPhoneCode(String mobile, UUID phoneCodeId) {
         return userRepository.findByMobileAndPhoneCodeId(mobile, phoneCodeId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + mobile));
+                .orElseThrow(() -> new UsernameNotFoundException("UserEntity not found: " + mobile));
     }
 }

@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/reference/**").permitAll()
+                        .requestMatchers("/api/workspaces/invites/resolve").permitAll()
+                        .requestMatchers("/api/workspaces/invites/signup-and-accept").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

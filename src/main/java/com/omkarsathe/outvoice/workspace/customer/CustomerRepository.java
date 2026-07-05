@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface CustomerRepository extends JpaRepository<Customer, UUID> {
-    List<Customer> findByWorkspaceId(UUID workspaceId);
+public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> {
+    List<CustomerEntity> findByWorkspaceId(UUID workspaceId);
 }

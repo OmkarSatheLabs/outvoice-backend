@@ -1,13 +1,17 @@
 package com.omkarsathe.outvoice.user;
 
+import com.omkarsathe.outvoice.common.entity.Auditable;
 import com.omkarsathe.outvoice.country.Country;
 import com.omkarsathe.outvoice.phone.PhoneCode;
+import com.omkarsathe.outvoice.user.workspace.UserWorkspaceEntity;
+import com.omkarsathe.outvoice.workspace.WorkspaceEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +34,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class UserEntity extends Auditable implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -62,35 +66,34 @@ public class User implements UserDetails {
     @JoinColumn(name = "country_id")
     private Country country;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    void prePersist() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    private Boolean isPlaceholder = false;
 
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    @Column(name = "invited_at", updatable = false)
+    private LocalDateTime invitedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invited_by")
+    private UserEntity invitedBy;
 
     @Column(updatable = false)
     private LocalDateTime deletedAt;
 
-//    @PreRemove
-//    void preRemove() {
-//        deletedAt = LocalDateTime.now();
-//    }
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<UserWorkspaceEntity> userWorkspaces = new ArrayList<>();
 
-    // The JWT subject — email takes priority over mobile
-//    public String getPrincipal() {
-//        return email != null ? email : mobile;
-//    }
+    // Convenience method to get workspaces directly, not mapped by JPA
+    @Transient
+    public List<WorkspaceEntity> getWorkspaces() {
+        if (userWorkspaces == null) {
+            return List.of();
+        }
+        return userWorkspaces.stream()
+                .map(UserWorkspaceEntity::getWorkspace)
+                .toList();
+    }
 
     @Override public String getUsername() { return this.id.toString(); }
     @Override public String getPassword() { return passwordHash; }

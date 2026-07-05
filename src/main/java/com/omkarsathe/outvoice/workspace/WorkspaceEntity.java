@@ -1,8 +1,9 @@
 package com.omkarsathe.outvoice.workspace;
 
+import com.omkarsathe.outvoice.common.entity.Auditable;
 import com.omkarsathe.outvoice.country.Country;
 import com.omkarsathe.outvoice.currency.Currency;
-import com.omkarsathe.outvoice.user.User;
+import com.omkarsathe.outvoice.user.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Workspace {
+public class WorkspaceEntity extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -38,40 +39,23 @@ public class Workspace {
 
     @Column(nullable = false)
     private String taxComplianceName;
-
-    private String panNumber;
-    private String gstNumber;
-    private String tanNumber;
+//
+//    private String panNumber;
+//    private String gstNumber;
+//    private String tanNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WorkspaceStatus status;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isPlaceholder = false;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    private User createdBy;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    void prePersist() {
-        createdAt = LocalDateTime.now();
-    }
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    private UserEntity createdBy;
 
     @Column(updatable = false)
     private LocalDateTime deletedAt;
-
-    @PreRemove
-    void preRemove() {
-        deletedAt = LocalDateTime.now();
-    }
 }

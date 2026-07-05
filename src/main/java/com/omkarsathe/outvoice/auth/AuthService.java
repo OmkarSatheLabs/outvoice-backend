@@ -10,13 +10,14 @@ import com.omkarsathe.outvoice.currency.CurrencyRepository;
 import com.omkarsathe.outvoice.phone.PhoneCode;
 import com.omkarsathe.outvoice.phone.PhoneCodeRepository;
 import com.omkarsathe.outvoice.security.JwtService;
-import com.omkarsathe.outvoice.user.User;
+import com.omkarsathe.outvoice.user.UserEntity;
 import com.omkarsathe.outvoice.user.UserRepository;
+import com.omkarsathe.outvoice.user.workspace.UserWorkspaceEntity;
+import com.omkarsathe.outvoice.user.workspace.UserWorkspaceRepository;
 import com.omkarsathe.outvoice.workspace.*;
-import com.omkarsathe.outvoice.workspace.MemberStatus;
+import com.omkarsathe.outvoice.workspace.member.MemberStatusEnum;
+import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Example;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 @Service
@@ -46,21 +48,6 @@ public class AuthService {
 
         logger.info("signup request: " + request);
 
-        boolean emailExists = request.getEmail() != null
-                && userRepository.findByEmail(request.getEmail()).isPresent();
-
-        if (emailExists) {
-            throw new BadCredentialsException("An account with this email already exists.");
-        }
-
-        boolean mobileExists = request.getMobile() != null
-                && request.getPhoneCodeId() != null
-                && userRepository.findByMobileAndPhoneCodeId(request.getMobile(), request.getPhoneCodeId()).isPresent();
-
-        if (mobileExists) {
-            throw new BadCredentialsException("An account with this mobile number already exists.");
-        }
-
         PhoneCode phoneCode = request.getPhoneCodeId() != null
                 ? phoneCodeRepository.findById(request.getPhoneCodeId()).orElse(null)
                 : null;
@@ -69,31 +56,50 @@ public class AuthService {
                 request.getUserCountryId()
         ).orElseThrow(() -> new RuntimeException("Country not found"));
 
-        User user = userRepository.save(User.builder()
-                .email(request.getEmail())
-                .phoneCode(phoneCode)
-                .mobile(request.getMobile())
-                .fullName(request.getFullName())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .isEmailVerified(false)
-                .isMobileVerified(false)
-                .country(userCountry)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build());
+        Optional<UserEntity> existingUserOpt = request.getEmail() != null
+                ? userRepository.findByEmail(request.getEmail())
+                : Optional.empty();
+
+        UserEntity user;
+        if (existingUserOpt.isPresent()) {
+            UserEntity existingUser = existingUserOpt.get();
+            if (!existingUser.getIsPlaceholder()) {
+                throw new BadCredentialsException("An account with this email already exists.");
+            }
+            // Claim existing placeholder user profile
+            existingUser.setFullName(request.getFullName());
+            existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            existingUser.setPhoneCode(phoneCode);
+            existingUser.setMobile(request.getMobile());
+            existingUser.setIsPlaceholder(false);
+            existingUser.setCountry(userCountry);
+            user = userRepository.save(existingUser);
+        } else {
+            boolean mobileExists = request.getMobile() != null
+                    && request.getPhoneCodeId() != null
+                    && userRepository.findByMobileAndPhoneCodeId(request.getMobile(), request.getPhoneCodeId())
+                            .map(u -> !u.getIsPlaceholder()).orElse(false);
+
+            if (mobileExists) {
+                throw new BadCredentialsException("An account with this mobile number already exists.");
+            }
+
+            user = userRepository.save(UserEntity.builder()
+                    .email(request.getEmail())
+                    .phoneCode(phoneCode)
+                    .mobile(request.getMobile())
+                    .fullName(request.getFullName())
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .isEmailVerified(false)
+                    .isMobileVerified(false)
+                    .isPlaceholder(false)
+                    .country(userCountry)
+                    .build());
+        }
 
         String taxComplianceName = StringUtils.hasText(request.getTaxComplianceName())
                 ? request.getTaxComplianceName()
                 : request.getFullName();
-
-        Workspace probe = new Workspace();
-        probe.setSlug(request.getWorkspaceSlug());
-        Example<Workspace> example = Example.of(probe);
-        Optional<Workspace> ws = workspaceRepository.findOne(example);
-
-        if (ws.isPresent()) {
-            throw new BadCredentialsException("An account with this workspace slug already exists.");
-        }
 
         Country workspaceCountry = countryRepository.findById(
                 request.getWorkspaceCountryId() != null
@@ -105,25 +111,51 @@ public class AuthService {
                 request.getCurrencyId()
         ).orElseThrow(()  -> new RuntimeException("Currency not found"));
 
-        Workspace workspace = workspaceRepository.save(Workspace.builder()
-                .name(request.getWorkspaceName())
-                .slug(request.getWorkspaceSlug())
-                .country(workspaceCountry)
-                .currency(currency)
-                .taxComplianceName(taxComplianceName)
-                .status(WorkspaceStatus.ACTIVE)
-                .createdBy(user)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build());
+        Optional<WorkspaceEntity> existingWsOpt = workspaceRepository.findBySlug(request.getWorkspaceSlug());
+        WorkspaceEntity workspace;
+        if (existingWsOpt.isPresent()) {
+            WorkspaceEntity existingWs = existingWsOpt.get();
+            if (!existingWs.getIsPlaceholder()) {
+                throw new BadCredentialsException("An account with this workspace slug already exists.");
+            }
+            // Claim existing placeholder workspace
+            existingWs.setName(request.getWorkspaceName());
+            existingWs.setCountry(workspaceCountry);
+            existingWs.setCurrency(currency);
+            existingWs.setTaxComplianceName(taxComplianceName);
+            existingWs.setStatus(WorkspaceStatus.ACTIVE);
+            existingWs.setCreatedBy(user);
+            existingWs.setIsPlaceholder(false);
+            workspace = workspaceRepository.save(existingWs);
+        } else {
+            workspace = workspaceRepository.save(WorkspaceEntity.builder()
+                    .name(request.getWorkspaceName())
+                    .slug(request.getWorkspaceSlug())
+                    .country(workspaceCountry)
+                    .currency(currency)
+                    .taxComplianceName(taxComplianceName)
+                    .status(WorkspaceStatus.ACTIVE)
+                    .createdBy(user)
+                    .isPlaceholder(false)
+                    .build());
+        }
 
-        userWorkspaceRepository.save(UserWorkspace.builder()
-                .user(user)
-                .workspace(workspace)
-                .role(WorkspaceRole.OWNER)
-                .isDefaultWorkspace(true)
-                .status(MemberStatus.ACTIVE)
-                .build());
+        Optional<UserWorkspaceEntity> existingRel = userWorkspaceRepository.findByUserIdAndWorkspaceId(user.getId(), workspace.getId());
+        if (existingRel.isPresent()) {
+            UserWorkspaceEntity rel = existingRel.get();
+            rel.setRole(WorkspaceRole.OWNER);
+            rel.setStatus(MemberStatusEnum.ACTIVE);
+            rel.setIsDefaultWorkspace(true);
+            userWorkspaceRepository.save(rel);
+        } else {
+            userWorkspaceRepository.save(UserWorkspaceEntity.builder()
+                    .user(user)
+                    .workspace(workspace)
+                    .role(WorkspaceRole.OWNER)
+                    .isDefaultWorkspace(true)
+                    .status(MemberStatusEnum.ACTIVE)
+                    .build());
+        }
 
         return new AuthResponse(jwtService.generateToken(user.getUsername()));
     }
@@ -131,16 +163,17 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         final String errorMessage = "Invalid email address/mobile number or password";
 
-        Optional<User> userOptional = Optional.empty();
-        if (request.getEmail() != null && request.getPassword() != null) {
+        Optional<UserEntity> userOptional = Optional.empty();
+
+        if (StringUtils.hasText(request.getEmail()) && StringUtils.hasText(request.getPassword())) {
             userOptional = userRepository.findByEmail(request.getEmail());
-        } else if (request.getMobile() != null && request.getPhoneCodeId() != null && request.getPassword() != null) {
+        } else if (request.getPhoneCodeId() != null && StringUtils.hasText(request.getMobile())) {
             userOptional = userRepository.findByMobileAndPhoneCodeId(request.getMobile(), request.getPhoneCodeId());
         } else {
             throw new BadCredentialsException(errorMessage);
         }
 
-        User user = userOptional.orElseThrow(() -> new BadCredentialsException(errorMessage));
+        UserEntity user = userOptional.orElseThrow(() -> new BadCredentialsException(errorMessage));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException(errorMessage);
