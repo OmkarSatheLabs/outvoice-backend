@@ -11,10 +11,25 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    notify: true
 
 jwt:
   secret: ${JWT_SECRET}
   expiry-ms: ${JWT_EXPIRY_MS:86400000}
+
+password-reset:
+  expiry-ms: ${JWT_PASSWORD_RESET_EXPIRY_MS}
 
 app:
   # Comma-separated list of allowed CORS origins; override if frontend runs on a non-default port
@@ -25,3 +40,15 @@ rate-limit:
     # Max requests per IP within the refill window for /api/auth/** endpoints
     capacity: ${RATE_LIMIT_AUTH_CAPACITY:10}
     refill-period-seconds: ${RATE_LIMIT_AUTH_REFILL_SECONDS:60}
+
+sms:
+  provider: textbee
+  notify: true
+
+  textbee:
+    base-url: https://api.textbee.dev
+    api-key: ${TEXTBEE_API_KEY}
+    device-id: ${TEXTBEE_DEVICE_ID:}
+
+frontend:
+  url: ${FRONTEND_URL}

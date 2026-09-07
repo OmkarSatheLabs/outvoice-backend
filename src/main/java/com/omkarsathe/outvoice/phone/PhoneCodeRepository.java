@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface PhoneCodeRepository extends JpaRepository<PhoneCode, UUID> {
     List<PhoneCode> findAllByOrderByCodeAsc();
+
+    PhoneCode findByCode(String code);
 }

@@ -1,6 +1,6 @@
 package com.omkarsathe.outvoice.workspace.dto;
 
-import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
+//import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -12,8 +12,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateMemberRolesTeamsRequest {
-    @NotNull(message = "Role is required")
-    private WorkspaceRole role;
+//    @NotNull(message = "Role is required")
+//    private WorkspaceRole role;
 
     private Set<UUID> teamIds;
     private Set<UUID> customRoleIds;

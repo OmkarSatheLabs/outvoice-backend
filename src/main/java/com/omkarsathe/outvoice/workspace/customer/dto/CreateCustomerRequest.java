@@ -15,6 +15,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CreateCustomerRequest {
 
+    private CreateCustomerRequestIdentityResolution identityResolution;
+
     private String customerName;
 
     private String companyName;
@@ -29,8 +31,4 @@ public class CreateCustomerRequest {
     private UUID countryId;
 
     private UUID currencyId;
-
-    private UUID userId;
-
-    private UUID workspaceId;
 }

@@ -1,7 +1,6 @@
 package com.omkarsathe.outvoice.country;
 
 import com.omkarsathe.outvoice.currency.CurrencyDto;
-import com.omkarsathe.outvoice.phone.PhoneCode;
 import com.omkarsathe.outvoice.phone.PhoneCodeDto;
 
 import java.util.UUID;

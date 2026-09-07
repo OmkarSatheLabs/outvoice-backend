@@ -30,8 +30,10 @@ public class CreateInvoiceRequest {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class LineItemDto {
+        private Integer sortOrder;
         private String description;
-        private Integer quantity;
+        private BigDecimal quantity;
         private BigDecimal unitPrice;
+        private BigDecimal taxRate;
     }
 }

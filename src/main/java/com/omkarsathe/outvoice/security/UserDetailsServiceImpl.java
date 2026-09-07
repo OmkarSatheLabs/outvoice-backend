@@ -1,6 +1,6 @@
 package com.omkarsathe.outvoice.security;
 
-import com.omkarsathe.outvoice.user.UserRepository;
+import com.omkarsathe.outvoice.workspace.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,11 +19,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) {
         UUID userId = UUID.fromString(username);
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("UserEntity not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
-
-    public UserDetails loadUserByUsernameAndPhoneCode(String mobile, UUID phoneCodeId) {
-        return userRepository.findByMobileAndPhoneCodeId(mobile, phoneCodeId)
-                .orElseThrow(() -> new UsernameNotFoundException("UserEntity not found: " + mobile));
-    }
+//
+//    public UserDetails loadUserByUsernameAndPhoneCode(String mobile, UUID phoneCodeId) {
+//        return userRepository.findByMobileAndPhoneCodeId(mobile, phoneCodeId)
+//                .orElseThrow(() -> new UsernameNotFoundException("UserEntity not found: " + mobile));
+//    }
 }

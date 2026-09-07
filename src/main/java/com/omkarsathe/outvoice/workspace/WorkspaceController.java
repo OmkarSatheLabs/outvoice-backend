@@ -1,53 +1,59 @@
 package com.omkarsathe.outvoice.workspace;
 
-import com.omkarsathe.outvoice.workspace.dto.WorkspaceInviteResponse;
-import com.omkarsathe.outvoice.workspace.dto.WorkspaceRequest;
-import com.omkarsathe.outvoice.workspace.dto.WorkspaceResponse;
-import jakarta.validation.Valid;
+import com.omkarsathe.outvoice.workspace.member.MemberResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workspaces")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class WorkspaceController {
 
     private final WorkspaceService workspaceService;
 
-    @GetMapping
-    public List<WorkspaceResponse> getWorkspaces(@AuthenticationPrincipal UserDetails userDetails) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        return workspaceService.getUserWorkspaces(userId);
+    @GetMapping("/workspaces")
+    public List<WorkspaceResponse> getWorkspaces() {
+        return workspaceService.getWorkspaces();
     }
 
-    @PostMapping
-    public WorkspaceResponse createWorkspace(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody WorkspaceRequest workspaceRequest) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        return workspaceService.createUserWorkspace(userId, workspaceRequest);
+    @GetMapping("/workspaces/{workspaceId}/members")
+    public List<MemberResponse> getMembers(@PathVariable UUID workspaceId) {
+        return workspaceService.getMembers(workspaceId);
     }
 
-//    @GetMapping("/invites")
-//    public List<WorkspaceInviteResponse> getInvites(@AuthenticationPrincipal UserDetails userDetails) {
+    @GetMapping("/user/workspaces")
+    public List<WorkspaceResponse> getUserWorkspaces(@AuthenticationPrincipal UserDetails userDetails) {
+        return workspaceService.getUserWorkspaces(UUID.fromString(userDetails.getUsername()));
+    }
+
+//    @GetMapping("/admin/workspaces")
+//    public List<AdminWorkspaceDto> getAllWorkspaces(@AuthenticationPrincipal UserDetails userDetails) {
 //        UUID userId = UUID.fromString(userDetails.getUsername());
-//        return workspaceService.getUserInvites(userId);
+//        if (!workspaceService.isPlatformAdmin(userId)) {
+//            throw new ForbiddenException("ACCESS_DENIED", "Only platform administrators can access this endpoint");
+//        }
+//        return workspaceService.getAllWorkspaces();
 //    }
-
-    @PostMapping("/invites/{inviteId}/accept")
-    public void acceptInvite(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID inviteId) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        workspaceService.acceptInvite(userId, inviteId);
-    }
-
-    @PostMapping("/invites/{inviteId}/decline")
-    public void declineInvite(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID inviteId) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        workspaceService.declineInvite(userId, inviteId);
-    }
+//
+//    @PostMapping("/workspaces")
+//    public WorkspaceResponse createWorkspace(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody WorkspaceRequest workspaceRequest) {
+//        return workspaceService.createUserWorkspace(UUID.fromString(userDetails.getUsername()), workspaceRequest);
+//    }
+//
+//    @PostMapping("/workspaces/invites/{inviteId}/accept")
+//    public void acceptInvite(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID inviteId) {
+//        UUID userId = UUID.fromString(userDetails.getUsername());
+//        workspaceService.acceptInvite(userId, inviteId);
+//    }
+//
+//    @PostMapping("/workspaces/invites/{inviteId}/decline")
+//    public void declineInvite(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID inviteId) {
+//        UUID userId = UUID.fromString(userDetails.getUsername());
+//        workspaceService.declineInvite(userId, inviteId);
+//    }
 }

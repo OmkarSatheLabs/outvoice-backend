@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?><database name="outvoice" schema="public" type="PostgreSQL - 18.3">
+   <tables>
+      <table name="countries" numRows="195" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="country_id" foreignKey="country_phone_codes_country_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="country_phone_codes"/>
+            <child column="country_id" foreignKey="users_country_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+            <child column="country_id" foreignKey="workspaces_country_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="name" nullable="false" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="iso_code_2" nullable="false" remarks="" size="2" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="iso_code_3" nullable="false" remarks="" size="3" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="4" name="default_currency_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="countries_default_currency_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="currencies"/>
+         </column>
+         <column autoUpdated="false" defaultValue="true" digits="0" id="5" name="is_active" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="6" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="7" name="updated_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="8" name="deleted_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="countries_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="countries_iso_code_2_key" unique="true">
+            <column ascending="true" name="iso_code_2"/>
+         </index>
+         <index name="countries_iso_code_3_key" unique="true">
+            <column ascending="true" name="iso_code_3"/>
+         </index>
+      </table>
+      <table name="country_phone_codes" numRows="192" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="country_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="country_phone_codes_country_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="countries"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="phone_code_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="country_phone_codes_phone_code_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="phone_codes"/>
+         </column>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="3" name="is_primary" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="4" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="5" name="updated_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="6" name="deleted_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="country_phone_codes_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="uq_country_phone_code" unique="true">
+            <column ascending="true" name="country_id"/>
+            <column ascending="true" name="phone_code_id"/>
+         </index>
+         <index name="uq_country_primary_phone_code" unique="true">
+            <column ascending="true" name="country_id"/>
+         </index>
+      </table>
+      <table name="currencies" numRows="155" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="default_currency_id" foreignKey="countries_default_currency_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="countries"/>
+            <child column="currency_id" foreignKey="workspaces_currency_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="code" nullable="false" remarks="" size="3" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="name" nullable="false" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="symbol" nullable="false" remarks="" size="10" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="2" digits="0" id="4" name="decimal_places" nullable="false" remarks="" size="5" type="int2" typeCode="5"/>
+         <column autoUpdated="false" defaultValue="true" digits="0" id="5" name="is_active" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="6" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="7" name="updated_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="8" name="deleted_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="currencies_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="currencies_code_key" unique="true">
+            <column ascending="true" name="code"/>
+         </index>
+      </table>
+      <table name="custom_roles" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="role_id" foreignKey="user_workspace_roles_role_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_roles"/>
+            <child column="role_id" foreignKey="workspace_invitation_roles_role_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspace_invitation_roles"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="custom_roles_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="name" nullable="false" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="description" nullable="true" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="4" name="created_at" nullable="false" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="created_by" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="custom_roles_created_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="6" name="updated_at" nullable="true" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="7" name="updated_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="custom_roles_updated_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="8" name="deleted_at" nullable="true" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="9" name="deleted_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="custom_roles_deleted_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="custom_roles_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+      </table>
+      <table name="flyway_schema_history" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="installed_rank" nullable="false" remarks="" size="10" type="int4" typeCode="4"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="version" nullable="true" remarks="" size="50" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="description" nullable="false" remarks="" size="200" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="type" nullable="false" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="4" name="script" nullable="false" remarks="" size="1000" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="checksum" nullable="true" remarks="" size="10" type="int4" typeCode="4"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="6" name="installed_by" nullable="false" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="7" name="installed_on" nullable="false" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="8" name="execution_time" nullable="false" remarks="" size="10" type="int4" typeCode="4"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="9" name="success" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <primaryKey column="installed_rank" sequenceNumberInPK="1"/>
+         <index name="flyway_schema_history_pk" unique="true">
+            <column ascending="true" name="installed_rank"/>
+         </index>
+         <index name="flyway_schema_history_s_idx" unique="false">
+            <column ascending="true" name="success"/>
+         </index>
+      </table>
+      <table name="phone_codes" numRows="183" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="phone_code_id" foreignKey="country_phone_codes_phone_code_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="country_phone_codes"/>
+            <child column="phone_code_id" foreignKey="user_workspace_invitations_phone_code_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="user_workspace_invitations"/>
+            <child column="phone_code_id" foreignKey="users_phone_code_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="code" nullable="false" remarks="" size="10" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="true" digits="0" id="2" name="is_active" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="3" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="4" name="updated_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="5" name="deleted_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="phone_codes_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="phone_codes_code_key" unique="true">
+            <column ascending="true" name="code"/>
+         </index>
+      </table>
+      <table name="teams" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="team_id" foreignKey="user_workspace_teams_team_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_teams"/>
+            <child column="team_id" foreignKey="workspace_invitation_teams_team_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspace_invitation_teams"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="teams_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="name" nullable="false" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="description" nullable="true" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="4" name="created_at" nullable="false" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="created_by" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="teams_created_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="6" name="updated_at" nullable="true" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="7" name="updated_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="teams_updated_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="8" name="deleted_at" nullable="true" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="9" name="deleted_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="teams_deleted_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="teams_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+      </table>
+      <table name="user_workspace_invitations" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="invitation_id" foreignKey="workspace_invitation_roles_invitation_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspace_invitation_roles"/>
+            <child column="invitation_id" foreignKey="workspace_invitation_teams_invitation_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspace_invitation_teams"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_invitations_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="user_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_invitations_user_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="email" nullable="true" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="4" name="phone_code_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_invitations_phone_code_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="phone_codes"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="mobile" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="6" name="role" nullable="false" remarks="" size="2147483647" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="7" name="invited_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_invitations_invited_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="8" name="token" nullable="false" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="'PENDING'::character varying" digits="0" id="9" name="status" nullable="false" remarks="" size="2147483647" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="10" name="created_at" nullable="false" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="11" name="expires_at" nullable="false" remarks="" size="29" type="timestamp" typeCode="93"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="user_workspace_invitations_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="user_workspace_invitations_token_key" unique="true">
+            <column ascending="true" name="token"/>
+         </index>
+      </table>
+      <table name="user_workspace_roles" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="user_workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_roles_user_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="role_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_roles_role_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="custom_roles"/>
+         </column>
+         <primaryKey column="user_workspace_id" sequenceNumberInPK="1"/>
+         <primaryKey column="role_id" sequenceNumberInPK="2"/>
+         <index name="user_workspace_roles_pkey" unique="true">
+            <column ascending="true" name="user_workspace_id"/>
+            <column ascending="true" name="role_id"/>
+         </index>
+      </table>
+      <table name="user_workspace_teams" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="user_workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_teams_user_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="team_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspace_teams_team_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="teams"/>
+         </column>
+         <primaryKey column="user_workspace_id" sequenceNumberInPK="1"/>
+         <primaryKey column="team_id" sequenceNumberInPK="2"/>
+         <index name="user_workspace_teams_pkey" unique="true">
+            <column ascending="true" name="user_workspace_id"/>
+            <column ascending="true" name="team_id"/>
+         </index>
+      </table>
+      <table name="user_workspaces" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="gen_random_uuid()" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="user_workspace_id" foreignKey="user_workspace_roles_user_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_roles"/>
+            <child column="user_workspace_id" foreignKey="user_workspace_teams_user_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_teams"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="user_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspaces_user_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspaces_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="role" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="4" name="is_default_workspace" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="invited_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="user_workspaces_invited_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="6" name="joined_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="'ACTIVE'::character varying" digits="0" id="7" name="status" nullable="false" remarks="" size="20" type="varchar" typeCode="12"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="user_workspaces_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="idx_user_workspaces_workspace_id" unique="false">
+            <column ascending="true" name="workspace_id"/>
+         </index>
+         <index name="one_default_workspace_per_user" unique="true">
+            <column ascending="true" name="user_id"/>
+         </index>
+         <index name="user_workspaces_user_id_workspace_id_key" unique="true">
+            <column ascending="true" name="user_id"/>
+            <column ascending="true" name="workspace_id"/>
+         </index>
+         <checkConstraint constraint="((role)::text = ANY ((ARRAY['OWNER'::character varying, 'ADMIN'::character varying, 'MEMBER'::character varying])::text[]))" name="user_workspaces_role_check"/>
+         <checkConstraint constraint="((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INVITED'::character varying, 'SUSPENDED'::character varying, 'DEACTIVATED'::character varying, 'REMOVED'::character varying])::text[]))" name="user_workspaces_status_check"/>
+      </table>
+      <table name="users" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="created_by" foreignKey="custom_roles_created_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="custom_roles"/>
+            <child column="deleted_by" foreignKey="custom_roles_deleted_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="custom_roles"/>
+            <child column="updated_by" foreignKey="custom_roles_updated_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="custom_roles"/>
+            <child column="created_by" foreignKey="teams_created_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="teams"/>
+            <child column="deleted_by" foreignKey="teams_deleted_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="teams"/>
+            <child column="updated_by" foreignKey="teams_updated_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="teams"/>
+            <child column="invited_by" foreignKey="user_workspace_invitations_invited_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="user_workspace_invitations"/>
+            <child column="user_id" foreignKey="user_workspace_invitations_user_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_invitations"/>
+            <child column="invited_by" foreignKey="user_workspaces_invited_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="user_workspaces"/>
+            <child column="user_id" foreignKey="user_workspaces_user_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="user_workspaces"/>
+            <child column="invited_by" foreignKey="users_invited_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+            <child column="created_by" foreignKey="workspaces_created_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+            <child column="deleted_by" foreignKey="workspaces_deleted_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+            <child column="updated_by" foreignKey="workspaces_updated_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="email" nullable="true" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="phone_code_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="users_phone_code_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="phone_codes"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="mobile" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="4" name="full_name" nullable="false" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="password_hash" nullable="false" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="6" name="is_email_verified" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="7" name="is_mobile_verified" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="8" name="country_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="users_country_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="countries"/>
+         </column>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="9" name="is_placeholder" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="true" digits="0" id="10" name="is_active" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="11" name="invited_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="12" name="invited_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="users_invited_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="13" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="14" name="updated_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="15" name="deleted_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="users_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="users_email_key" unique="true">
+            <column ascending="true" name="email"/>
+         </index>
+         <index name="users_mobile_phone_code_id_key" unique="true">
+            <column ascending="true" name="mobile"/>
+            <column ascending="true" name="phone_code_id"/>
+         </index>
+         <checkConstraint constraint="((email IS NOT NULL) OR ((phone_code_id IS NOT NULL) AND (mobile IS NOT NULL)))" name="users_check"/>
+      </table>
+      <table name="workspace_customers" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="gen_random_uuid()" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="customer_id" foreignKey="workspace_invoices_customer_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspace_invoices"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_customers_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="display_name" nullable="false" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="email" nullable="true" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="4" name="mobile" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="linked_workspace_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_customers_linked_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="6" name="default_currency" nullable="false" remarks="" size="3" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="7" name="created_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="8" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="9" name="updated_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="10" name="updated_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="11" name="is_deleted" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="workspace_customers_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="idx_workspace_customers_linked_workspace_id" unique="false">
+            <column ascending="true" name="linked_workspace_id"/>
+         </index>
+         <index name="idx_workspace_customers_search" unique="false">
+            <column ascending="true" name="workspace_id"/>
+            <column ascending="true" name="display_name"/>
+            <column ascending="true" name="email"/>
+            <column ascending="true" name="mobile"/>
+         </index>
+         <index name="idx_workspace_customers_workspace_id" unique="false">
+            <column ascending="true" name="workspace_id"/>
+         </index>
+         <index name="uk_workspace_customer_email" unique="true">
+            <column ascending="true" name="workspace_id"/>
+            <column ascending="true" name="email"/>
+         </index>
+         <checkConstraint constraint="((email IS NOT NULL) OR (mobile IS NOT NULL))" name="chk_customer_has_identity"/>
+      </table>
+      <table name="workspace_invitation_roles" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="invitation_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invitation_roles_invitation_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_invitations"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="role_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invitation_roles_role_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="custom_roles"/>
+         </column>
+         <primaryKey column="invitation_id" sequenceNumberInPK="1"/>
+         <primaryKey column="role_id" sequenceNumberInPK="2"/>
+         <index name="workspace_invitation_roles_pkey" unique="true">
+            <column ascending="true" name="invitation_id"/>
+            <column ascending="true" name="role_id"/>
+         </index>
+      </table>
+      <table name="workspace_invitation_teams" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="null" digits="0" id="0" name="invitation_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invitation_teams_invitation_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_invitations"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="team_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invitation_teams_team_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="teams"/>
+         </column>
+         <primaryKey column="invitation_id" sequenceNumberInPK="1"/>
+         <primaryKey column="team_id" sequenceNumberInPK="2"/>
+         <index name="workspace_invitation_teams_pkey" unique="true">
+            <column ascending="true" name="invitation_id"/>
+            <column ascending="true" name="team_id"/>
+         </index>
+      </table>
+      <table name="workspace_invoice_line_items" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="gen_random_uuid()" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="invoice_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invoice_line_items_invoice_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspace_invoices"/>
+         </column>
+         <column autoUpdated="false" defaultValue="0" digits="0" id="2" name="sort_order" nullable="false" remarks="" size="10" type="int4" typeCode="4"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="description" nullable="false" remarks="" size="2147483647" type="text" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="1" digits="4" id="4" name="quantity" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="2" id="5" name="unit_price" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="2" id="6" name="line_subtotal" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="2" id="7" name="tax_rate" nullable="true" remarks="" size="5" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="8" name="tax_amount" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="9" name="discount_amount" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="2" id="10" name="line_total" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="11" name="hsn_sac_code" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="12" name="created_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="13" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="14" name="updated_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="15" name="updated_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="16" name="is_deleted" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="workspace_invoice_line_items_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="idx_workspace_invoice_line_items_invoice_id" unique="false">
+            <column ascending="true" name="invoice_id"/>
+            <column ascending="true" name="sort_order"/>
+         </index>
+         <checkConstraint constraint="((quantity &gt; (0)::numeric) AND (unit_price &gt;= (0)::numeric) AND (line_subtotal &gt;= (0)::numeric) AND (tax_amount &gt;= (0)::numeric) AND (discount_amount &gt;= (0)::numeric) AND (line_total &gt;= (0)::numeric))" name="chk_line_item_amounts_non_negative"/>
+      </table>
+      <table name="workspace_invoices" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="gen_random_uuid()" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="invoice_id" foreignKey="workspace_invoice_line_items_invoice_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="workspace_invoice_line_items"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="workspace_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invoices_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspaces"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="customer_id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspace_invoices_customer_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspace_customers"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="3" name="invoice_number" nullable="false" remarks="" size="50" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="'DRAFT'::character varying" digits="0" id="4" name="status" nullable="false" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="issue_date" nullable="false" remarks="" size="13" type="date" typeCode="91"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="6" name="due_date" nullable="true" remarks="" size="13" type="date" typeCode="91"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="7" name="currency" nullable="false" remarks="" size="3" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="8" id="8" name="fx_rate_to_base" nullable="true" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="2" id="9" name="base_currency_amount" nullable="true" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="10" name="fx_rate_captured_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="11" name="subtotal" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="12" name="tax_amount" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="13" name="discount_amount" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="14" name="total_amount" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="0" digits="2" id="15" name="amount_paid" nullable="false" remarks="" size="18" type="numeric" typeCode="2"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="16" name="gstin" nullable="true" remarks="" size="15" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="17" name="place_of_supply" nullable="true" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="18" name="is_gst_applicable" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="19" name="notes" nullable="true" remarks="" size="2147483647" type="text" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="20" name="terms" nullable="true" remarks="" size="2147483647" type="text" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="21" name="finalized_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="22" name="created_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="23" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="24" name="updated_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111"/>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="25" name="updated_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="26" name="is_deleted" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="workspace_invoices_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="idx_workspace_invoices_customer_id" unique="false">
+            <column ascending="true" name="customer_id"/>
+         </index>
+         <index name="idx_workspace_invoices_due_date" unique="false">
+            <column ascending="true" name="workspace_id"/>
+            <column ascending="true" name="due_date"/>
+         </index>
+         <index name="idx_workspace_invoices_issue_date" unique="false">
+            <column ascending="true" name="workspace_id"/>
+            <column ascending="true" name="issue_date"/>
+         </index>
+         <index name="idx_workspace_invoices_status" unique="false">
+            <column ascending="true" name="workspace_id"/>
+            <column ascending="true" name="status"/>
+         </index>
+         <index name="idx_workspace_invoices_workspace_id" unique="false">
+            <column ascending="true" name="workspace_id"/>
+         </index>
+         <index name="uk_workspace_invoice_number" unique="true">
+            <column ascending="true" name="workspace_id"/>
+            <column ascending="true" name="invoice_number"/>
+         </index>
+         <checkConstraint constraint="(amount_paid &lt;= total_amount)" name="chk_amount_paid_not_exceeding_total"/>
+         <checkConstraint constraint="((subtotal &gt;= (0)::numeric) AND (tax_amount &gt;= (0)::numeric) AND (discount_amount &gt;= (0)::numeric) AND (total_amount &gt;= (0)::numeric) AND (amount_paid &gt;= (0)::numeric))" name="chk_invoice_amounts_non_negative"/>
+         <checkConstraint constraint="((status)::text = ANY ((ARRAY['DRAFT'::character varying, 'FINALIZED'::character varying, 'SENT'::character varying, 'PARTIALLY_PAID'::character varying, 'PAID'::character varying, 'OVERDUE'::character varying, 'CANCELLED'::character varying, 'VOID'::character varying])::text[]))" name="chk_invoice_status"/>
+      </table>
+      <table name="workspaces" remarks="" schema="public" type="TABLE">
+         <column autoUpdated="false" defaultValue="gen_random_uuid()" digits="0" id="0" name="id" nullable="false" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <child column="workspace_id" foreignKey="custom_roles_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="custom_roles"/>
+            <child column="workspace_id" foreignKey="teams_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="teams"/>
+            <child column="workspace_id" foreignKey="user_workspace_invitations_workspace_id_fkey" implied="false" onDeleteCascade="true" schema="public" table="user_workspace_invitations"/>
+            <child column="workspace_id" foreignKey="user_workspaces_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="user_workspaces"/>
+            <child column="linked_workspace_id" foreignKey="workspace_customers_linked_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspace_customers"/>
+            <child column="workspace_id" foreignKey="workspace_customers_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspace_customers"/>
+            <child column="workspace_id" foreignKey="workspace_invoices_workspace_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="workspace_invoices"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="1" name="name" nullable="false" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="2" name="slug" nullable="false" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="'STANDARD'::character varying" digits="0" id="3" name="type" nullable="false" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="'ACTIVE'::character varying" digits="0" id="4" name="status" nullable="false" remarks="" size="2147483647" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="5" name="base_currency" nullable="false" remarks="" size="3" type="bpchar" typeCode="1"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="6" name="currency_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspaces_currency_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="currencies"/>
+         </column>
+         <column autoUpdated="false" defaultValue="true" digits="0" id="7" name="is_claimed" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="8" name="gstin" nullable="true" remarks="" size="15" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="9" name="default_place_of_supply" nullable="true" remarks="" size="100" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="10" name="is_gst_registered" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="'FREE'::character varying" digits="0" id="11" name="plan" nullable="false" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="12" name="billing_address" nullable="true" remarks="" size="2147483647" type="text" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="13" name="country_id" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspaces_country_id_fkey" implied="false" onDeleteCascade="false" schema="public" table="countries"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="14" name="support_email" nullable="true" remarks="" size="255" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="15" name="support_phone" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="16" name="logo_url" nullable="true" remarks="" size="2147483647" type="text" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="17" name="invoice_number_prefix" nullable="true" remarks="" size="20" type="varchar" typeCode="12"/>
+         <column autoUpdated="false" defaultValue="1" digits="0" id="18" name="next_invoice_sequence" nullable="false" remarks="" size="19" type="int8" typeCode="-5"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="19" name="created_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspaces_created_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="now()" digits="6" id="20" name="created_at" nullable="false" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="21" name="updated_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspaces_updated_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="22" name="updated_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="null" digits="0" id="23" name="deleted_by" nullable="true" remarks="" size="2147483647" type="uuid" typeCode="1111">
+            <parent column="id" foreignKey="workspaces_deleted_by_fkey" implied="false" onDeleteCascade="false" schema="public" table="users"/>
+         </column>
+         <column autoUpdated="false" defaultValue="null" digits="6" id="24" name="deleted_at" nullable="true" remarks="" size="35" type="timestamptz" typeCode="93"/>
+         <column autoUpdated="false" defaultValue="true" digits="0" id="25" name="is_active" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <column autoUpdated="false" defaultValue="false" digits="0" id="26" name="is_deleted" nullable="false" remarks="" size="1" type="bool" typeCode="-7"/>
+         <primaryKey column="id" sequenceNumberInPK="1"/>
+         <index name="workspaces_pkey" unique="true">
+            <column ascending="true" name="id"/>
+         </index>
+         <index name="idx_workspaces_claimed" unique="false">
+            <column ascending="true" name="is_claimed"/>
+         </index>
+         <index name="idx_workspaces_type" unique="false">
+            <column ascending="true" name="type"/>
+         </index>
+         <index name="uk_workspace_slug" unique="true">
+            <column ascending="true" name="slug"/>
+         </index>
+         <checkConstraint constraint="(next_invoice_sequence &gt; 0)" name="chk_next_invoice_sequence_positive"/>
+         <checkConstraint constraint="((type)::text = ANY ((ARRAY['STANDARD'::character varying, 'PLATFORM_ADMIN'::character varying, 'SHADOW'::character varying])::text[]))" name="chk_workspace_type"/>
+      </table>
+   </tables>
+</database>

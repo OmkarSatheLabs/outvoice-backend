@@ -1,0 +1,8 @@
+services:
+  schemaspy:
+    image: schemaspy/schemaspy:6.2.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # harmless safety net, sometimes needed
+    volumes:
+      - ./schemaspy.properties:/schemaspy.properties
+      - ./schemaspy-output:/output

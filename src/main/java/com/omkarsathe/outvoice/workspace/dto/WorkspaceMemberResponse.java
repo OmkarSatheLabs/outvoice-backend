@@ -1,6 +1,6 @@
 package com.omkarsathe.outvoice.workspace.dto;
 
-import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
+//import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -16,7 +16,7 @@ public class WorkspaceMemberResponse {
     private String fullName;
     private String email;
     private String mobile;
-    private WorkspaceRole role;
+//    private WorkspaceRole role;
     private String status;
     private LocalDateTime joinedAt;
     private List<TeamResponse> teams;

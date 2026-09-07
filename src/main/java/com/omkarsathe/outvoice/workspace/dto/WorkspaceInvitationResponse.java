@@ -1,6 +1,5 @@
 package com.omkarsathe.outvoice.workspace.dto;
 
-import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,7 +17,6 @@ public class WorkspaceInvitationResponse {
     private String workspaceSlug;
     private String email;
     private String mobile;
-    private WorkspaceRole role;
     private String invitedBy;
     private String token;
     private String status;

@@ -28,7 +28,7 @@ public class SignupRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
-    private UUID userCountryId;
+//    private UUID userCountryId;
 
     @NotBlank
     private String workspaceName;

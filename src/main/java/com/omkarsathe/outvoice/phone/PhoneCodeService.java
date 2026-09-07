@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,5 +19,13 @@ public class PhoneCodeService {
                 .stream()
                 .map(p -> new PhoneCodeDto(p.getId(), p.getCode()))
                 .toList();
+    }
+
+    public PhoneCode findByCode(String code) {
+        return phoneCodeRepository.findByCode(code);
+    }
+
+    public PhoneCode findById(UUID phoneCodeId) {
+        return phoneCodeRepository.findById(phoneCodeId).orElseThrow(() -> new RuntimeException("Phone code with UUID " + phoneCodeId + " not found"));
     }
 }

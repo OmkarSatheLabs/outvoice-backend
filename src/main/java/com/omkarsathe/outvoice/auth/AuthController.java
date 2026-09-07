@@ -1,8 +1,6 @@
 package com.omkarsathe.outvoice.auth;
 
 import com.omkarsathe.outvoice.auth.dto.AuthResponse;
-import com.omkarsathe.outvoice.auth.dto.LoginRequest;
-import com.omkarsathe.outvoice.auth.dto.SignupRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
