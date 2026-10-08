@@ -12,43 +12,43 @@ spring:
   flyway:
     enabled: true
   mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-    notify: true
+    notify: false
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:9f82c40b82f6e7c3b2a5d1e4c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6}
   expiry-ms: ${JWT_EXPIRY_MS:86400000}
 
 password-reset:
-  expiry-ms: ${JWT_PASSWORD_RESET_EXPIRY_MS}
+  expiry-ms: ${JWT_PASSWORD_RESET_EXPIRY_MS:3600000}
 
 app:
   # Comma-separated list of allowed CORS origins; override if frontend runs on a non-default port
-  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:https://dev.outvoice.omkarsathe.com,http://localhost:4200}
 
 rate-limit:
   auth:
     # Max requests per IP within the refill window for /api/auth/** endpoints
-    capacity: ${RATE_LIMIT_AUTH_CAPACITY:10}
+    capacity: ${RATE_LIMIT_AUTH_CAPACITY:20}
     refill-period-seconds: ${RATE_LIMIT_AUTH_REFILL_SECONDS:60}
 
 sms:
   provider: textbee
-  notify: true
+  notify: false
 
   textbee:
     base-url: https://api.textbee.dev
-    api-key: ${TEXTBEE_API_KEY}
+    api-key: ${TEXTBEE_API_KEY:}
     device-id: ${TEXTBEE_DEVICE_ID:}
 
 frontend:
-  url: ${FRONTEND_URL}
+  url: ${FRONTEND_URL:https://dev.outvoice.omkarsathe.com}
