@@ -21,14 +21,19 @@ public class WorkspaceController {
         return workspaceService.getWorkspaces();
     }
 
-    @GetMapping("/workspaces/{workspaceId}/members")
-    public List<MemberResponse> getMembers(@PathVariable UUID workspaceId) {
-        return workspaceService.getMembers(workspaceId);
+    @GetMapping("/workspaces/{workspaceId}/invites")
+    public List<String> getMembers(@PathVariable UUID workspaceId) {
+        return List.of();
     }
 
     @GetMapping("/user/workspaces")
     public List<WorkspaceResponse> getUserWorkspaces(@AuthenticationPrincipal UserDetails userDetails) {
         return workspaceService.getUserWorkspaces(UUID.fromString(userDetails.getUsername()));
+    }
+
+    @GetMapping("/user/workspaces/{workspaceId}")
+    public WorkspaceResponse getWorkspace(@PathVariable UUID workspaceId) {
+        return workspaceService.getWorkspace(workspaceId);
     }
 
 //    @GetMapping("/admin/workspaces")

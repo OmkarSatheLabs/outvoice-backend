@@ -1,19 +1,7 @@
 package com.omkarsathe.outvoice.workspace;
-//
-//import com.omkarsathe.outvoice.country.Country;
-//import com.omkarsathe.outvoice.country.CountryRepository;
-//import com.omkarsathe.outvoice.currency.CurrencyEntity;
-//import com.omkarsathe.outvoice.currency.CurrencyRepository;
-//import com.omkarsathe.outvoice.user.UserEntity;
-//import com.omkarsathe.outvoice.user.UserRepository;
-//import com.omkarsathe.outvoice.user.workspace.UserWorkspaceEntity;
-//import com.omkarsathe.outvoice.user.workspace.UserWorkspaceRepository;
-//import com.omkarsathe.outvoice.user.workspace.UserWorkspaceService;
-//import com.omkarsathe.outvoice.workspace.currency.dto.CurrencyResponse;
-//import com.omkarsathe.outvoice.workspace.dto.CreateWorkspaceRequestDto;
-//import com.omkarsathe.outvoice.workspace.member.MemberStatusEnum;
 
-//import com.omkarsathe.outvoice.workspace.member.MemberRepository;
+import com.omkarsathe.outvoice.audit.log.AuditService;
+import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.user.workspace.role.RoleNotFoundException;
 import com.omkarsathe.outvoice.workspace.member.MemberRepository;
 import com.omkarsathe.outvoice.workspace.member.MemberResponse;
@@ -25,20 +13,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
-////import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-//
-//import java.util.*;
-//import java.util.stream.Collectors;
-//
-//import com.omkarsathe.outvoice.workspace.dto.AdminWorkspaceDto;
-//import com.omkarsathe.outvoice.workspace.invoice.WorkspaceInvoiceRepository;
-//import com.omkarsathe.outvoice.workspace.invoice.WorkspaceInvoiceEntity;
-//import com.omkarsathe.outvoice.workspace.invoice.WorkspaceInvoiceStatus;
-//import java.math.BigDecimal;
-//
+
 @Service
 @RequiredArgsConstructor
 public class WorkspaceService {
@@ -46,8 +22,9 @@ public class WorkspaceService {
     private final WorkspaceRepository workspaceRepository;
     private final MemberRepository memberRepository;
     private final UserMapper userMapper;
-    private final WorkspaceResponseMapper workspaceMapper;
+    private final WorkspaceResponseMapper workspaceResponseMapper;
     private final UserService userService;
+    private final AuditService auditService;
 
     public Workspace findById(UUID id) {
         return workspaceRepository.findById(id)
@@ -57,11 +34,22 @@ public class WorkspaceService {
     public WorkspaceResponse create(CreateWorkspace request) {
         Workspace workspace = Workspace.builder()
                 .name(request.name())
+                .invoiceNumberPrefix(generateRandomInvoiceNumberPrefix())
                 .build();
 
         Workspace newWorkspace = workspaceRepository.save(workspace);
 
-        return new WorkspaceResponse(newWorkspace.getId(), newWorkspace.getName());
+        auditService.log(WorkspaceService.class.toString(), UUID.randomUUID(), UUID.randomUUID());
+
+        return workspaceResponseMapper.toResponse(newWorkspace);
+    }
+
+    private String generateRandomInvoiceNumberPrefix() {
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 8)
+                .toUpperCase();
     }
 
     @Transactional
@@ -78,7 +66,7 @@ public class WorkspaceService {
     public List<WorkspaceResponse> getWorkspaces() {
         return workspaceRepository.findAll()
                 .stream()
-                .map(workspaceMapper::toResponse)
+                .map(workspaceResponseMapper::toResponse)
                 .toList();
     }
 //
@@ -149,6 +137,14 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> getUserWorkspaces(UUID userId) {
         return userService.getWorkspaces(userId);
+    }
+
+    @Transactional
+    public WorkspaceResponse getWorkspace(UUID workspaceId) {
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found: " + workspaceId));
+
+        return workspaceResponseMapper.toResponse(workspace);
     }
 
 //////    private List<String> buildPermissions(UserWorkspaceEntity uw) {

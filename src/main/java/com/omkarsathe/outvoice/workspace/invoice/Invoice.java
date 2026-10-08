@@ -5,8 +5,12 @@ import com.omkarsathe.outvoice.workspace.customer.Customer;
 import com.omkarsathe.outvoice.workspace.invoice.item.Item;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +37,9 @@ public class Invoice {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @Column
+    private String invoiceNumber;
+
     @Column()
     private BigDecimal total;
 
@@ -49,10 +56,23 @@ public class Invoice {
 
     private LocalDate dueDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column()
+    private InvoiceStatus status;
+
     @OneToMany(
             mappedBy = "invoice",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     private List<Item> items = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private Instant created_at;
+
+    private Instant updated_at;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 }

@@ -87,7 +87,6 @@ public class UserService {
                 .toList();
     }
 
-    @Transactional
     public List<WorkspaceResponse> getWorkspaces(UUID userId) {
         return memberRepository.findByUserId(userId)
                 .stream()

@@ -7,6 +7,7 @@ import com.omkarsathe.outvoice.workspace.WorkspaceService;
 import com.omkarsathe.outvoice.workspace.user.*;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +21,11 @@ public class MemberService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final MemberMapper memberMapper;
+
+    @Transactional(readOnly = true)
+    public List<MemberResponse> getMembers(UUID workspaceId) {
+        return memberRepository.findByWorkspaceId(workspaceId).stream().map(memberMapper::toResponse).toList();
+    }
 
     public MemberResponse create(UUID workspaceId, UUID userId) {
 

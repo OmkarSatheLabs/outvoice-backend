@@ -98,14 +98,14 @@ public class Workspace {
 //    private String logoUrl;
 
     // Invoice numbering prefix, e.g. "INV" -> "INV-0042"
-//    @Column(name = "invoice_number_prefix", length = 20)
-//    private String invoiceNumberPrefix;
-//
-//    // Running counter for generating the next invoice number per workspace
-//    @Column(name = "next_invoice_sequence", nullable = false)
-//    @Builder.Default
-//    private Long nextInvoiceSequence = 1L;
-//
+    @Column(name = "invoice_number_prefix", length = 20)
+    private String invoiceNumberPrefix;
+
+    // Running counter for generating the next invoice number per workspace
+    @Column(name = "next_invoice_sequence", nullable = false)
+    @Builder.Default
+    private Long nextInvoiceSequence = 1L;
+
 //    @Column(name = "is_active", nullable = false)
 //    @Builder.Default
 //    private boolean isActive = true;

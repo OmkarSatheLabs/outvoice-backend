@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: outvoice-backend-dev
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    branch: master
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DB_URL
+        value: jdbc:postgresql://ep-delicate-breeze-b59t2jy6-pooler.c-7.us-east-2.aws.neon.tech/outvoice?sslmode=require
+      - key: DB_USERNAME
+        value: neondb_owner
+      - key: DB_PASSWORD
+        value: npg_GYbU0qCldTJ6
+      - key: JWT_SECRET
+        value: 9f82c40b82f6e7c3b2a5d1e4c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://dev.outvoice.omkarsathe.com,http://localhost:4200
+      - key: FRONTEND_URL
+        value: https://dev.outvoice.omkarsathe.com

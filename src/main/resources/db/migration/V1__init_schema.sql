@@ -1,26 +1,28 @@
--- CREATE TABLE currencies (
---     id             UUID         PRIMARY KEY,
---     code           VARCHAR(3)   NOT NULL UNIQUE,    -- ISO 4217 e.g. INR, USD, EUR
---     name           VARCHAR(100) NOT NULL,           -- e.g. Indian Rupee
---     symbol         VARCHAR(10)  NOT NULL,           -- e.g. ₹, $, €
---     decimal_places SMALLINT     NOT NULL DEFAULT 2, -- 0 for JPY, 3 for KWD
---     is_active      BOOLEAN      NOT NULL DEFAULT TRUE,
---     created_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
---     updated_at     TIMESTAMPTZ    DEFAULT null,
---     deleted_at     TIMESTAMPTZ    DEFAULT null
--- );
+CREATE TABLE currencies
+(
+    id             UUID PRIMARY KEY,
+    code           VARCHAR(3)   NOT NULL UNIQUE,    -- ISO 4217 e.g. INR, USD, EUR
+    name           VARCHAR(100) NOT NULL,           -- e.g. Indian Rupee
+    symbol         VARCHAR(10)  NOT NULL,           -- e.g. ₹, $, €
+    decimal_places SMALLINT     NOT NULL DEFAULT 2, -- 0 for JPY, 3 for KWD
+    is_active      BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ           DEFAULT null,
+    deleted_at     TIMESTAMPTZ           DEFAULT null
+);
 
--- CREATE TABLE countries (
---     id                  UUID         PRIMARY KEY,
---     name                VARCHAR(100) NOT NULL,
---     iso_code_2          VARCHAR(2)   NOT NULL UNIQUE,  -- e.g. IN, US, GB
---     iso_code_3          VARCHAR(3)   NOT NULL UNIQUE,  -- e.g. IND, USA, GBR
---     default_currency_id UUID         REFERENCES currencies,
---     is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
---     created_at          TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
---     updated_at          TIMESTAMPTZ    DEFAULT null,
---     deleted_at          TIMESTAMPTZ    DEFAULT null
--- );
+CREATE TABLE countries
+(
+    id                  UUID PRIMARY KEY,
+    name                VARCHAR(100) NOT NULL,
+    iso_code_2          VARCHAR(2)   NOT NULL UNIQUE, -- e.g. IN, US, GB
+    iso_code_3          VARCHAR(3)   NOT NULL UNIQUE, -- e.g. IND, USA, GBR
+    default_currency_id UUID REFERENCES currencies,
+    is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ           DEFAULT null,
+    deleted_at          TIMESTAMPTZ           DEFAULT null
+);
 
 CREATE TABLE phone_codes
 (
@@ -32,30 +34,31 @@ CREATE TABLE phone_codes
     deleted_at TIMESTAMPTZ          DEFAULT null
 );
 
--- CREATE TABLE country_phone_codes (
---     id            UUID        PRIMARY KEY,
---     country_id    UUID        NOT NULL REFERENCES countries,
---     phone_code_id UUID        NOT NULL REFERENCES phone_codes,
---     is_primary    BOOLEAN     NOT NULL DEFAULT FALSE,
---     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
---     updated_at    TIMESTAMPTZ DEFAULT null,
---     deleted_at    TIMESTAMPTZ DEFAULT null,
---
---     CONSTRAINT uq_country_phone_code UNIQUE (country_id, phone_code_id)
--- );
+CREATE TABLE country_phone_codes
+(
+    id            UUID PRIMARY KEY,
+    country_id    UUID        NOT NULL REFERENCES countries,
+    phone_code_id UUID        NOT NULL REFERENCES phone_codes,
+    is_primary    BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ          DEFAULT null,
+    deleted_at    TIMESTAMPTZ          DEFAULT null,
 
--- CREATE UNIQUE INDEX uq_country_primary_phone_code
---     ON country_phone_codes (country_id)
---     WHERE is_primary = TRUE;
+    CONSTRAINT uq_country_phone_code UNIQUE (country_id, phone_code_id)
+);
+
+CREATE UNIQUE INDEX uq_country_primary_phone_code
+    ON country_phone_codes (country_id)
+    WHERE is_primary = TRUE;
 
 CREATE TABLE users
 (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id            UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
     email         VARCHAR(255) UNIQUE,
     phone_code_id UUID REFERENCES phone_codes,
     mobile        VARCHAR(20),
     full_name     VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL
+    password_hash VARCHAR(255) NOT NULL,
 --     is_email_verified  BOOLEAN      NOT NULL DEFAULT FALSE,
 --     is_mobile_verified BOOLEAN      NOT NULL DEFAULT FALSE,
 --     country_id         UUID         REFERENCES countries,
@@ -63,8 +66,8 @@ CREATE TABLE users
 --     is_active          BOOLEAN      NOT NULL DEFAULT TRUE,
 --     invited_at         TIMESTAMPTZ,
 --     invited_by         UUID         REFERENCES users,
---     created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
---     updated_at         TIMESTAMPTZ  DEFAULT null,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ           DEFAULT null
 --     deleted_at         TIMESTAMPTZ  DEFAULT null,
 --
 --     UNIQUE(mobile, phone_code_id),
@@ -77,13 +80,13 @@ CREATE TABLE users
 
 CREATE TABLE workspaces
 (
-    id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL
+    id                    UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    name                  VARCHAR(255) NOT NULL,
 --     status                  VARCHAR      NOT NULL DEFAULT 'ACTIVE',
 --     currency_id             UUID         REFERENCES currencies,
 --     country_id              UUID         REFERENCES countries,
---     invoice_number_prefix   VARCHAR(20),
---     next_invoice_sequence   BIGINT       NOT NULL DEFAULT 1,
+    invoice_number_prefix VARCHAR(20),
+    next_invoice_sequence BIGINT       NOT NULL DEFAULT 1
 --
 --     -- Audit
 --     created_by              UUID         REFERENCES users,
@@ -211,24 +214,24 @@ CREATE TABLE customers
 
 CREATE TABLE invoices
 (
-    id           UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
+    id             UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
 
     -- Biller (always a Workspace)
-    workspace_id UUID           NOT NULL REFERENCES workspaces (id),
-    customer_id  UUID           NOT NULL REFERENCES customers (id),
-    total        NUMERIC(18, 2) NOT NULL DEFAULT 0,
-    tax          NUMERIC(18, 2) NOT NULL DEFAULT 0,
-    discount     NUMERIC(18, 2) NOT NULL DEFAULT 0,
-    net_total    NUMERIC(18, 2) NOT NULL DEFAULT 0,
-    issue_date   DATE,
-    due_date     DATE
+    workspace_id   UUID           NOT NULL REFERENCES workspaces (id),
+    customer_id    UUID           NOT NULL REFERENCES customers (id),
+    invoice_number VARCHAR(50),
+    total          NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    tax            NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    discount       NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    net_total      NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    issue_date     DATE,
+    due_date       DATE,
 
     -- Billee (resolved through the customer record)
 --     customer_id             UUID NOT NULL REFERENCES customers(id),
 --
---     invoice_number          VARCHAR(50) NOT NULL,
 --
---     status                  VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    status         VARCHAR(20)    NOT NULL DEFAULT 'DRAFT',
 --
 --     issue_date              DATE NOT NULL,
 --     due_date                DATE,
@@ -258,9 +261,10 @@ CREATE TABLE invoices
 --
 --     -- Audit (from Auditable base class)
 --     created_by              UUID,
---     created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at     TIMESTAMPTZ    NOT NULL DEFAULT now(),
 --     updated_by              UUID,
---     updated_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ,
+    deleted_at     TIMESTAMPTZ
 --
 --     -- Soft delete
 --     is_deleted              BOOLEAN NOT NULL DEFAULT FALSE,
@@ -599,3 +603,14 @@ CREATE INDEX idx_pdf_processor_status
 
 CREATE INDEX idx_pdf_processor_status_created_at
     ON pdf_processor (status, created_at);
+
+CREATE TABLE audit_log
+(
+    id                 UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    resource_type      VARCHAR(100) NOT NULL,
+    changed_by         UUID         NOT NULL,
+    resource_id        UUID         NOT NULL,
+    change_description TEXT         NOT NULL,
+    changes            JSONB        NOT NULL,
+    changed_at         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -5,6 +5,7 @@ import com.omkarsathe.outvoice.phone.PhoneCode;
 import com.omkarsathe.outvoice.phone.PhoneCodeRepository;
 import com.omkarsathe.outvoice.workspace.Workspace;
 import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +22,7 @@ public class CustomerService {
     private final WorkspaceRepository workspaceRepository;
     private final PhoneCodeRepository phoneCodeRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomers(UUID workspaceId) {
         return customerRepository.findAllByWorkspaceId(workspaceId)
                 .stream()

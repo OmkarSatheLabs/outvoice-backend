@@ -20,18 +20,28 @@ public class InvoiceController {
         return invoiceService.create(workspaceId, request);
     }
 
+    @PutMapping("/{invoiceId}")
+    public InvoiceResponse update(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId, @Valid @RequestBody UpdateInvoice request) {
+        return invoiceService.update(workspaceId, invoiceId, request);
+    }
+
+    @DeleteMapping("/{invoiceId}")
+    public ResponseEntity<?> delete(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.delete(workspaceId, invoiceId);
+    }
+
     @GetMapping
     public List<InvoiceResponse> getInvoices(@PathVariable UUID workspaceId) {
         return invoiceService.getInvoices(workspaceId);
+    }
+
+    @GetMapping("/summary")
+    public InvoiceSummaryResponse getSummary(@PathVariable UUID workspaceId) {
+        return invoiceService.getSummary(workspaceId);
     }
 
     @GetMapping("/{invoiceId}")
     public InvoiceResponse getInvoice(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
         return invoiceService.getInvoice(workspaceId, invoiceId);
     }
-
-//    @GetMapping("/{invoiceId}/pdf")
-//    public ResponseEntity<byte[]> sendInvoice(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
-//        return invoiceService.sendInvoice(invoiceId);
-//    }
 }
