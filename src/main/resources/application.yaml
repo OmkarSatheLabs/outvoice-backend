@@ -58,3 +58,15 @@ sms:
 
 frontend:
   url: ${FRONTEND_URL:https://dev.outvoice.omkarsathe.com}
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    mail:
+      enabled: false
