@@ -9,8 +9,14 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ${DB_SCHEMA:outvoice}
   flyway:
     enabled: true
+    default-schema: ${DB_SCHEMA:outvoice}
+    schemas: ${DB_SCHEMA:outvoice}
+    create-schemas: true
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:587}
