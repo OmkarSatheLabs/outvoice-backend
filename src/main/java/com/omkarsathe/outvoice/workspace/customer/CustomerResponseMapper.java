@@ -18,6 +18,9 @@ public interface CustomerResponseMapper {
     CustomerResponse toResponse(Customer customer);
 
     default List<CustomerInvoiceResponse> mapInvoices(List<Invoice> invoices) {
+        if (invoices == null) {
+            return List.of();
+        }
         return invoices.stream()
                 .filter(this::isActive)
                 .map(this::toInvoiceResponse)
@@ -25,6 +28,9 @@ public interface CustomerResponseMapper {
     }
 
     default BigDecimal totalInvoiced(List<Invoice> invoices) {
+        if (invoices == null) {
+            return BigDecimal.ZERO;
+        }
         return invoices.stream()
                 .filter(this::isActive)
                 .map(Invoice::getNetTotal)
@@ -32,6 +38,9 @@ public interface CustomerResponseMapper {
     }
 
     default BigDecimal totalCollected(List<Invoice> invoices) {
+        if (invoices == null) {
+            return BigDecimal.ZERO;
+        }
         return invoices.stream()
                 .filter(this::isActive)
                 .filter(i -> i.getStatus() == InvoiceStatus.PAID)
@@ -40,6 +49,9 @@ public interface CustomerResponseMapper {
     }
 
     default BigDecimal outstandingBalance(List<Invoice> invoices) {
+        if (invoices == null) {
+            return BigDecimal.ZERO;
+        }
         return totalInvoiced(invoices)
                 .subtract(totalCollected(invoices));
     }

@@ -16,18 +16,18 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
 
     @PostMapping
-    public InvoiceResponse create(@PathVariable UUID workspaceId, @Valid @RequestBody CreateInvoice request) {
-        return invoiceService.create(workspaceId, request);
+    public InvoiceResponse createInvoice(@PathVariable UUID workspaceId, @Valid @RequestBody CreateInvoice request) {
+        return invoiceService.createInvoice(workspaceId, request);
     }
 
     @PutMapping("/{invoiceId}")
-    public InvoiceResponse update(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId, @Valid @RequestBody UpdateInvoice request) {
-        return invoiceService.update(workspaceId, invoiceId, request);
+    public InvoiceResponse updateInvoice(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId, @Valid @RequestBody UpdateInvoice request) {
+        return invoiceService.updateInvoice(workspaceId, invoiceId, request);
     }
 
     @DeleteMapping("/{invoiceId}")
-    public ResponseEntity<?> delete(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
-        return invoiceService.delete(workspaceId, invoiceId);
+    public ResponseEntity<?> deleteInvoice(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.deleteInvoice(workspaceId, invoiceId);
     }
 
     @GetMapping

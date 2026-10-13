@@ -74,7 +74,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ApiError> handleNoResourceFound(NoResourceFoundException ex) {
         return ResponseEntity.status(ex.getStatusCode())
-                .body(new ApiError(ex.getStatusCode().value(), ex.getMessage()));
+                .body(new ApiError(
+                        ex.getStatusCode().value(),
+                        "We couldn’t find the page or resource you’re "
+                                + "looking for. Please check the URL and try again."
+                ));
     }
 
     @ExceptionHandler(InvoicePdfGenerationException.class)
@@ -115,7 +119,7 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError(
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "An unexpected error occurred."
+                        "We’re sorry, but we couldn’t complete your request right now. Please try again in a few moments. If the problem continues, please contact us at omkar@omkarsathe.com and our team will assist you."
                 ));
     }
 
@@ -132,10 +136,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiError> handleDbConflict(DataIntegrityViolationException ex) {
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         // catches the race-condition case the pre-check can miss
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiError(HttpStatus.CONFLICT.value(), ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "We couldn’t process your request because some of the "
+                                + "information conflicts with existing records "
+                                + "or doesn’t meet our requirements. "
+                                + "Please review your details and try again."
+                ));
     }
 
     @ExceptionHandler(DuplicateRoleException.class)

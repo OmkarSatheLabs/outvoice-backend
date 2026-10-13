@@ -1,5 +1,6 @@
 package com.omkarsathe.outvoice.workspace.invoice;
 
+import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.ResourceNotEditableException;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.mail.MailRequest;
@@ -47,10 +48,10 @@ public class InvoiceService {
     private final MailService mailService;
     private final PdfService pdfService;
     private final InvoicePdfProcessorHandler invoicePdfProcessorHandler;
+    private final AuditService auditService;
 
     @Transactional
-    public InvoiceResponse create(UUID workspaceId, CreateInvoice request) {
-
+    public InvoiceResponse createInvoice(UUID workspaceId, CreateInvoice request) {
         logger.info("Creating Invoice for Workspace " + workspaceId);
 
         Workspace workspace = workspaceRepository.findById(workspaceId)
@@ -156,6 +157,8 @@ public class InvoiceService {
 //            );
 //        }
 
+        auditService.log(InvoiceService.class.toString(), UUID.randomUUID(), UUID.randomUUID());
+
         return invoiceResponseMapper.toResponse(invoice);
     }
 
@@ -193,7 +196,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public InvoiceResponse update(UUID workspaceId, UUID invoiceId, UpdateInvoice request) {
+    public InvoiceResponse updateInvoice(UUID workspaceId, UUID invoiceId, UpdateInvoice request) {
 
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() ->
@@ -296,7 +299,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public ResponseEntity<?> delete(UUID workspaceId, UUID invoiceId) {
+    public ResponseEntity<?> deleteInvoice(UUID workspaceId, UUID invoiceId) {
 
         workspaceRepository.findById(workspaceId)
                 .orElseThrow(() ->

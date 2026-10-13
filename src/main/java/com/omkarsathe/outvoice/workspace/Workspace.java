@@ -4,13 +4,13 @@ package com.omkarsathe.outvoice.workspace;
 //import com.omkarsathe.outvoice.country.Country;
 //import com.omkarsathe.outvoice.currency.CurrencyEntity;
 //import com.omkarsathe.outvoice.user.UserEntity;
+import com.omkarsathe.outvoice.workspace.customer.Customer;
+import com.omkarsathe.outvoice.workspace.invoice.Invoice;
 import com.omkarsathe.outvoice.workspace.member.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "workspaces")
@@ -135,4 +135,7 @@ public class Workspace {
 
 //    @Column(updatable = false)
 //    private LocalDateTime deletedAt;
+
+    @OneToMany(mappedBy = "workspace", fetch = FetchType.LAZY)
+    private List<Customer> customers = new ArrayList<>();
 }

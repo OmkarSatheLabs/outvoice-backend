@@ -15,8 +15,8 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @PostMapping("/workspaces/{workspaceId}/customers")
-    public CustomerResponse create(@PathVariable UUID workspaceId, @Valid @RequestBody CreateCustomer request) {
-        return customerService.create(workspaceId, request);
+    public CustomerResponse createCustomer(@PathVariable UUID workspaceId, @Valid @RequestBody CreateCustomer request) {
+        return customerService.createCustomer(workspaceId, request);
     }
 
     @GetMapping("/workspaces/{workspaceId}/customers")

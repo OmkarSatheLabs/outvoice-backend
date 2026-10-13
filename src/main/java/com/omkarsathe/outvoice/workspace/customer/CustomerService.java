@@ -1,16 +1,17 @@
 package com.omkarsathe.outvoice.workspace.customer;
 
+import com.omkarsathe.outvoice.common.exception.BadRequestException;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.phone.PhoneCode;
 import com.omkarsathe.outvoice.phone.PhoneCodeRepository;
 import com.omkarsathe.outvoice.workspace.Workspace;
 import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
-import com.omkarsathe.outvoice.workspace.invoice.InvoiceStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -30,12 +31,24 @@ public class CustomerService {
                 .toList();
     }
 
-    public CustomerResponse create(UUID workspaceId, CreateCustomer request) {
+    @Transactional
+    public CustomerResponse createCustomer(UUID workspaceId, CreateCustomer request) {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Workspace not found: " + workspaceId
                         ));
+
+        boolean emailExists = workspace.getCustomers()
+                .stream()
+                .anyMatch(customer ->
+                        customer.getEmail() != null &&
+                                customer.getEmail().equalsIgnoreCase(request.email())
+                );
+
+        if (emailExists) {
+            throw new BadRequestException("A customer with this email address is already part of this workspace.");
+        }
 
         PhoneCode phoneCode = phoneCodeRepository.findByCode(request.phoneCode());
 

@@ -40,6 +40,7 @@ public class Customer {
     @Column()
     private String mobile;
 
+    @Builder.Default
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<Invoice> invoices = new ArrayList<>();
 }
