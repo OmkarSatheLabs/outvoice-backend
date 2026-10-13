@@ -119,7 +119,7 @@ public class PdfService {
             Files.write(targetFile, pdfBytes,
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-            request.setUrl(targetFile.toString());
+            request.setLocation(targetFile.toString());
             request.setProcessedAt(Instant.now());
             request.setStatus(PdfProcessorStatus.COMPLETED);
             request.setError(null);
@@ -138,9 +138,9 @@ public class PdfService {
                 if (hasEmail) {
                     Map<String, Object> variables = new HashMap<>();
                     variables.put("invoiceNumber", invoice.getId());
-                    variables.put("invoiceUrl", request.getUrl());
+                    variables.put("invoiceUrl", request.getLocation());
 
-                    mailService.queue(new MailRequest(customer.getEmail(), MailType.INVOICE, variables, List.of(request.getUrl())));
+                    mailService.queue(new MailRequest(customer.getEmail(), MailType.INVOICE, variables, List.of(request.getLocation())));
 
                     invoice.setStatus(InvoiceStatus.SENT);
                 }
@@ -164,7 +164,7 @@ public class PdfService {
                                     recipient,
                                     "Hi " + customer.getFullName() + ", \nA new invoice has been sent to you by "
                                             + senderName
-                                            + " on OutVoice.\nPlease visit " + request.getUrl() + " for further actions.\nPowered by OutVoice [" + frontendUrl + "]"
+                                            + " on OutVoice.\nPlease visit " + request.getLocation() + " for further actions.\nPowered by OutVoice [" + frontendUrl + "]"
                             )
                     );
 

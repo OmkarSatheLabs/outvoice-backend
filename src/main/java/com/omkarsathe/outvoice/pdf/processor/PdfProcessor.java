@@ -38,7 +38,7 @@ public class PdfProcessor {
 
     private Instant processedAt;
 
-    private String url;
+    private String location;
 
     private String error;
 }

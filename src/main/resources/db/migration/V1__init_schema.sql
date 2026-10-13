@@ -591,7 +591,7 @@ CREATE TABLE pdf_processor
     status       VARCHAR(50)              NOT NULL,
     created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
     processed_at TIMESTAMP WITH TIME ZONE,
-    url          VARCHAR(2048),
+    location     VARCHAR(2048),
     error        TEXT,
 
     CONSTRAINT pk_pdf_processor
