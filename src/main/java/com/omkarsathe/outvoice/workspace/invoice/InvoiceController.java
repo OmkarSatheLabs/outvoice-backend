@@ -44,4 +44,19 @@ public class InvoiceController {
     public InvoiceResponse getInvoice(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
         return invoiceService.getInvoice(workspaceId, invoiceId);
     }
+
+    @GetMapping("/{invoiceId}/pdf/status")
+    public InvoicePdfStatusResponse getInvoicePdfStatus(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.getInvoicePdfStatus(workspaceId, invoiceId);
+    }
+
+    @GetMapping("/{invoiceId}/pdf")
+    public ResponseEntity<byte[]> getInvoicePdf(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.getInvoicePdf(workspaceId, invoiceId);
+    }
+
+    @PostMapping("/{invoiceId}/pdf/retry")
+    public InvoicePdfStatusResponse retryInvoicePdf(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.retryInvoicePdf(workspaceId, invoiceId);
+    }
 }

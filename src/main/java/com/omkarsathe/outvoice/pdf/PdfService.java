@@ -24,6 +24,7 @@ import com.omkarsathe.outvoice.workspace.invoice.InvoiceStatus;
 import com.omkarsathe.outvoice.workspace.invoice.item.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +57,7 @@ public class PdfService {
     private final InvoiceRepository invoiceRepository;
     private final MailService mailService;
     private final SmsService smsService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // OutVoice brand design palette
     private static final Color BRAND_PRIMARY = new Color(108, 92, 231);      // #6C5CE7 - signature violet
@@ -97,6 +99,15 @@ public class PdfService {
 
         PdfProcessor saved = pdfProcessorRepository.save(processor);
         logger.info("Queued " + type.toString().toLowerCase() + " PDF generation for id: " + id + " with id: " + saved.getId());
+
+        if (type == PdfType.INVOICE) {
+            invoiceRepository.findById(id).ifPresent(inv -> {
+                inv.setPdfStatus(PdfProcessorStatus.PENDING);
+                invoiceRepository.save(inv);
+            });
+        }
+
+        eventPublisher.publishEvent(new InvoicePdfGenerateEvent(saved.getId()));
     }
 
     @Transactional
@@ -125,6 +136,10 @@ public class PdfService {
             request.setError(null);
 
             pdfProcessorRepository.save(request);
+
+            invoice.setPdfStatus(PdfProcessorStatus.COMPLETED);
+            invoice.setPdfLocation(targetFile.toString());
+            invoiceRepository.save(invoice);
 
             logger.info("Successfully processed PDF generation for id: " + request.getId());
 
@@ -171,11 +186,14 @@ public class PdfService {
                     invoice.setStatus(InvoiceStatus.SENT);
                 }
             }
-        } catch (DocumentException | IOException e) {
+        } catch (Exception e) {
             request.setStatus(PdfProcessorStatus.FAILED);
             request.setError(e.getMessage());
             request.setProcessedAt(Instant.now());
             pdfProcessorRepository.save(request);
+
+            invoice.setPdfStatus(PdfProcessorStatus.FAILED);
+            invoiceRepository.save(invoice);
 
             logger.severe("Failed processing PDF generation for id: " + request.getId() + " - " + e.getMessage());
 

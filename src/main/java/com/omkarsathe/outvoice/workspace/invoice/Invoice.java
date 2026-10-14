@@ -60,6 +60,13 @@ public class Invoice {
     @Column()
     private InvoiceStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pdf_status")
+    private com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus pdfStatus;
+
+    @Column(name = "pdf_location")
+    private String pdfLocation;
+
     @OneToMany(
             mappedBy = "invoice",
             cascade = CascadeType.ALL,

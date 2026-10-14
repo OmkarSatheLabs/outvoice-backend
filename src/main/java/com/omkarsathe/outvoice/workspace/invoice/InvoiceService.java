@@ -20,6 +20,7 @@ import com.omkarsathe.outvoice.workspace.invoice.item.CreateItem;
 import com.omkarsathe.outvoice.workspace.invoice.item.Item;
 import com.omkarsathe.outvoice.workspace.product.Product;
 import com.omkarsathe.outvoice.workspace.product.ProductRepository;
+import com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +31,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
@@ -332,21 +336,66 @@ public class InvoiceService {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-//    @Transactional
-//    public ResponseEntity<byte[]> sendInvoice(UUID invoiceId) {
-//        Invoice invoice = invoiceRepository.findById(invoiceId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
-//
-////        byte[] pdf = pdfService.generate(invoice.getId());
-//
-//        return ResponseEntity.ok()
-//                .contentType(MediaType.APPLICATION_PDF)
-//                .header(
-//                        HttpHeaders.CONTENT_DISPOSITION,
-//                        "attachment; filename=\"invoice-" +
-//                                invoiceId +
-//                                ".pdf\""
-//                )
-//                .body(pdf);
-//    }
+    @Transactional(readOnly = true)
+    public InvoicePdfStatusResponse getInvoicePdfStatus(UUID workspaceId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        PdfProcessorStatus status = invoice.getPdfStatus();
+        String pdfUrl = null;
+
+        if (status == PdfProcessorStatus.COMPLETED) {
+            pdfUrl = "/api/workspaces/" + workspaceId + "/invoices/" + invoiceId + "/pdf";
+        }
+
+        return new InvoicePdfStatusResponse(status, pdfUrl, null);
+    }
+
+    @Transactional
+    public ResponseEntity<byte[]> getInvoicePdf(UUID workspaceId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        byte[] pdfBytes;
+        try {
+            if (invoice.getPdfLocation() != null && Files.exists(Paths.get(invoice.getPdfLocation()))) {
+                pdfBytes = Files.readAllBytes(Paths.get(invoice.getPdfLocation()));
+            } else {
+                pdfBytes = pdfService.generatePdf(invoice);
+            }
+        } catch (Exception e) {
+            logger.severe("Failed to read or generate PDF for invoice " + invoiceId + ": " + e.getMessage());
+            throw new RuntimeException("Failed to generate or retrieve invoice PDF", e);
+        }
+
+        String filename = invoice.getInvoiceNumber() != null
+                ? invoice.getInvoiceNumber() + ".pdf"
+                : "invoice-" + invoice.getId() + ".pdf";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .body(pdfBytes);
+    }
+
+    @Transactional
+    public InvoicePdfStatusResponse retryInvoicePdf(UUID workspaceId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        pdfService.queue(invoice.getId(), PdfType.INVOICE);
+        return new InvoicePdfStatusResponse(PdfProcessorStatus.PENDING, null, null);
+    }
 }

@@ -1,5 +1,6 @@
 package com.omkarsathe.outvoice.workspace.invoice;
 
+import com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus;
 import com.omkarsathe.outvoice.workspace.WorkspaceResponse;
 import com.omkarsathe.outvoice.workspace.customer.CustomerResponse;
 import com.omkarsathe.outvoice.workspace.invoice.item.ItemResponse;
@@ -21,6 +22,8 @@ public record InvoiceResponse(
         BigDecimal discount,
         BigDecimal netTotal,
         InvoiceStatus status,
+        PdfProcessorStatus pdfStatus,
+        String pdfUrl,
         List<ItemResponse> items
 ) {
 }

@@ -232,6 +232,8 @@ CREATE TABLE invoices
 --
 --
     status         VARCHAR(20)    NOT NULL DEFAULT 'DRAFT',
+    pdf_status     VARCHAR(50),
+    pdf_location   VARCHAR(2048),
 --
 --     issue_date              DATE NOT NULL,
 --     due_date                DATE,
@@ -306,6 +308,9 @@ CREATE TABLE invoices
 --
 --     CONSTRAINT uq_workspace_invoice_number UNIQUE (workspace_id, invoice_number)
 );
+
+CREATE INDEX idx_invoices_pdf_status
+    ON invoices (pdf_status);
 
 CREATE TABLE products
 (
