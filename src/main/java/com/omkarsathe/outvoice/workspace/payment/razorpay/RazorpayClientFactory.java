@@ -43,7 +43,7 @@ public class RazorpayClientFactory {
     }
 
     public Optional<WorkspacePaymentSettings> getSettings(UUID workspaceId) {
-        return paymentSettingsRepository.findByWorkspaceId(workspaceId);
+        return paymentSettingsRepository.findByWorkspaceIdAndProvider(workspaceId, "RAZORPAY");
     }
 
     public String getDecryptedKeySecret(WorkspacePaymentSettings settings) {
@@ -58,7 +58,7 @@ public class RazorpayClientFactory {
     }
 
     private RazorpayClient buildClientForWorkspace(UUID workspaceId) {
-        WorkspacePaymentSettings settings = paymentSettingsRepository.findByWorkspaceId(workspaceId)
+        WorkspacePaymentSettings settings = paymentSettingsRepository.findByWorkspaceIdAndProvider(workspaceId, "RAZORPAY")
                 .orElseThrow(() -> new PaymentGatewayException("Razorpay gateway is not configured for workspace " + workspaceId));
 
         if (!settings.isEnabled()) {

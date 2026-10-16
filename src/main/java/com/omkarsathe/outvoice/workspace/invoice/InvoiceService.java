@@ -22,6 +22,11 @@ import com.omkarsathe.outvoice.workspace.product.Product;
 import com.omkarsathe.outvoice.workspace.product.ProductRepository;
 import com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus;
 import com.omkarsathe.outvoice.workspace.invoice.dto.InvoiceShareResponse;
+import com.omkarsathe.outvoice.workspace.invoice.dto.RecordPaymentRequest;
+import com.omkarsathe.outvoice.workspace.payment.Payment;
+import com.omkarsathe.outvoice.workspace.payment.PaymentRepository;
+import com.omkarsathe.outvoice.workspace.payment.PaymentStatus;
+import com.omkarsathe.outvoice.workspace.payment.dto.PaymentDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -55,6 +60,7 @@ public class InvoiceService {
     private final InvoicePdfProcessorHandler invoicePdfProcessorHandler;
     private final AuditService auditService;
     private final InvoiceAccessTokenService tokenService;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public InvoiceResponse createInvoice(UUID workspaceId, CreateInvoice request) {
@@ -413,5 +419,154 @@ public class InvoiceService {
         InvoiceAccessToken token = tokenService.getOrCreateToken(invoice);
         String url = tokenService.buildPublicInvoiceUrl(token.getTokenHash());
         return new InvoiceShareResponse(token.getTokenHash(), url);
+    }
+
+    @Transactional
+    public InvoiceResponse markInvoiceAsPaid(UUID workspaceId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            return invoiceResponseMapper.toResponse(invoice);
+        }
+
+        // If there are existing PENDING payments (e.g. customer submitted UTR), mark them as SUCCESS
+        List<Payment> pendingPayments = paymentRepository.findByInvoiceId(invoiceId).stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING)
+                .toList();
+
+        if (!pendingPayments.isEmpty()) {
+            for (Payment p : pendingPayments) {
+                p.setStatus(PaymentStatus.SUCCESS);
+                p.setCompletedAt(Instant.now());
+                paymentRepository.save(p);
+            }
+        } else {
+            Payment payment = Payment.builder()
+                    .invoice(invoice)
+                    .workspace(invoice.getWorkspace())
+                    .amount(invoice.getNetTotal())
+                    .status(PaymentStatus.SUCCESS)
+                    .provider("MANUAL")
+                    .paymentMethod("MANUAL")
+                    .currency("INR")
+                    .notes("Marked as paid by workspace owner")
+                    .completedAt(Instant.now())
+                    .build();
+            paymentRepository.save(payment);
+        }
+
+        invoice.setStatus(InvoiceStatus.PAID);
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // Queue PDF regeneration so PAID status watermark is rendered
+        pdfService.queue(saved.getId(), PdfType.INVOICE);
+
+        logger.info("Invoice " + invoiceId + " marked as PAID");
+        return invoiceResponseMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public InvoiceResponse recordPayment(UUID workspaceId, UUID invoiceId, RecordPaymentRequest request) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        BigDecimal amount = (request != null && request.amount() != null)
+                ? request.amount()
+                : invoice.getNetTotal();
+
+        String provider = (request != null && request.provider() != null && !request.provider().isBlank())
+                ? request.provider().toUpperCase()
+                : "MANUAL";
+
+        Instant completedAt = (request != null && request.paymentDate() != null)
+                ? request.paymentDate().atStartOfDay(java.time.ZoneOffset.UTC).toInstant()
+                : Instant.now();
+
+        String ref = (request != null && request.transactionReference() != null && !request.transactionReference().isBlank())
+                ? request.transactionReference().trim()
+                : null;
+
+        String notes = (request != null && request.notes() != null && !request.notes().isBlank())
+                ? request.notes().trim()
+                : null;
+
+        // If there's an existing PENDING payment, update it to SUCCESS
+        List<Payment> pendingPayments = paymentRepository.findByInvoiceId(invoiceId).stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING)
+                .toList();
+
+        if (!pendingPayments.isEmpty()) {
+            Payment p = pendingPayments.get(0);
+            p.setStatus(PaymentStatus.SUCCESS);
+            p.setProvider(provider);
+            p.setPaymentMethod(provider);
+            p.setAmount(amount);
+            if (ref != null) {
+                p.setProviderPaymentId(ref);
+            }
+            if (notes != null) {
+                p.setNotes(notes);
+            }
+            p.setCompletedAt(completedAt);
+            paymentRepository.save(p);
+        } else {
+            Payment payment = Payment.builder()
+                    .invoice(invoice)
+                    .workspace(invoice.getWorkspace())
+                    .amount(amount)
+                    .status(PaymentStatus.SUCCESS)
+                    .provider(provider)
+                    .paymentMethod(provider)
+                    .providerPaymentId(ref)
+                    .currency("INR")
+                    .notes(notes)
+                    .completedAt(completedAt)
+                    .build();
+            paymentRepository.save(payment);
+        }
+
+        invoice.setStatus(InvoiceStatus.PAID);
+        Invoice saved = invoiceRepository.save(invoice);
+
+        // Queue PDF regeneration so PAID status watermark is rendered
+        pdfService.queue(saved.getId(), PdfType.INVOICE);
+
+        logger.info("Recorded payment for invoice " + invoiceId + ": provider=" + provider + ", amount=" + amount);
+        return invoiceResponseMapper.toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentDto> getInvoicePayments(UUID workspaceId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        return paymentRepository.findByInvoiceId(invoiceId).stream()
+                .map(p -> new PaymentDto(
+                        p.getId(),
+                        invoice.getId(),
+                        p.getAmount(),
+                        p.getStatus(),
+                        p.getProvider(),
+                        p.getOrderId(),
+                        p.getProviderPaymentId(),
+                        p.getPaymentMethod(),
+                        p.getNotes(),
+                        p.getCompletedAt(),
+                        p.getCreatedAt()
+                ))
+                .toList();
     }
 }

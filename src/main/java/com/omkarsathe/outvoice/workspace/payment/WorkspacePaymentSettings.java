@@ -35,21 +35,54 @@ public class WorkspacePaymentSettings {
     private Workspace workspace;
 
     @Column(nullable = false, length = 50)
-    @Builder.Default
-    private String provider = "RAZORPAY";
+    private String provider;
 
-    @Column(name = "key_id", nullable = false)
+    @Column(name = "is_primary", nullable = false)
+    @Builder.Default
+    private boolean isPrimary = false;
+
+    @Column(name = "is_enabled", nullable = false)
+    @Builder.Default
+    private boolean isEnabled = true;
+
+    // Razorpay specific configuration
+    @Column(name = "key_id")
     private String keyId;
 
-    @Column(name = "key_secret_encrypted", nullable = false, length = 1000)
+    @Column(name = "key_secret_encrypted", length = 1000)
     private String keySecretEncrypted;
 
     @Column(name = "webhook_secret_encrypted", length = 1000)
     private String webhookSecretEncrypted;
 
-    @Column(name = "is_enabled", nullable = false)
-    @Builder.Default
-    private boolean isEnabled = true;
+    // UPI specific configuration
+    @Column(name = "upi_id", length = 100)
+    private String upiId;
+
+    @Column(name = "payee_name", length = 200)
+    private String payeeName;
+
+    // Bank Transfer specific configuration
+    @Column(name = "bank_account_name", length = 200)
+    private String bankAccountName;
+
+    @Column(name = "bank_account_number", length = 100)
+    private String bankAccountNumber;
+
+    @Column(name = "bank_ifsc_code", length = 50)
+    private String bankIfscCode;
+
+    @Column(name = "bank_name", length = 150)
+    private String bankName;
+
+    @Column(name = "bank_branch", length = 150)
+    private String bankBranch;
+
+    @Column(name = "bank_swift_code", length = 50)
+    private String bankSwiftCode;
+
+    @Column(name = "instructions", columnDefinition = "TEXT")
+    private String instructions;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

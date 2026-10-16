@@ -1,6 +1,8 @@
 package com.omkarsathe.outvoice.workspace.invoice;
 
 import com.omkarsathe.outvoice.workspace.invoice.dto.CreateRazorpayOrderResponse;
+import com.omkarsathe.outvoice.workspace.invoice.dto.NotifyOfflinePaymentRequest;
+import com.omkarsathe.outvoice.workspace.invoice.dto.NotifyOfflinePaymentResponse;
 import com.omkarsathe.outvoice.workspace.invoice.dto.PublicInvoiceDto;
 import com.omkarsathe.outvoice.workspace.invoice.dto.RazorpayPaymentVerifyRequest;
 import com.omkarsathe.outvoice.workspace.invoice.dto.RazorpayPaymentVerifyResponse;
@@ -37,5 +39,13 @@ public class PublicInvoiceController {
             @Valid @RequestBody RazorpayPaymentVerifyRequest request
     ) {
         return ResponseEntity.ok(publicInvoiceService.verifyPayment(token, request));
+    }
+
+    @PostMapping("/payments/notify-offline")
+    public ResponseEntity<NotifyOfflinePaymentResponse> notifyOfflinePayment(
+            @PathVariable String token,
+            @Valid @RequestBody NotifyOfflinePaymentRequest request
+    ) {
+        return ResponseEntity.ok(publicInvoiceService.notifyOfflinePayment(token, request));
     }
 }

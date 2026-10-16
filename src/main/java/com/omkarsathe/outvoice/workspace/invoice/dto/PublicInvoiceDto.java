@@ -39,8 +39,10 @@ public record PublicInvoiceDto(
         // Items
         List<PublicInvoiceItemDto> items,
 
-        // Payment capability
+        // Payment capabilities
         boolean paymentEnabled,
+        String primaryPaymentMethod,
+        List<PaymentMethodDto> paymentMethods,
         String razorpayKeyId
 ) {
 }

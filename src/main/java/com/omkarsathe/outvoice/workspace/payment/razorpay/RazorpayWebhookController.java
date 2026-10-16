@@ -47,7 +47,7 @@ public class RazorpayWebhookController {
     ) {
         log.info("Received Razorpay webhook for workspace: {}", workspaceId);
 
-        Optional<WorkspacePaymentSettings> settingsOpt = paymentSettingsRepository.findByWorkspaceId(workspaceId);
+        Optional<WorkspacePaymentSettings> settingsOpt = paymentSettingsRepository.findByWorkspaceIdAndProvider(workspaceId, "RAZORPAY");
         if (settingsOpt.isEmpty() || !settingsOpt.get().isEnabled()) {
             log.warn("Webhook ignored: Razorpay settings not found or disabled for workspace {}", workspaceId);
             return ResponseEntity.ok(Map.of("status", "ignored"));

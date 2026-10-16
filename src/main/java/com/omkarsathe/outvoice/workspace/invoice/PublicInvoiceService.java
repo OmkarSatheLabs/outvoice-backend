@@ -52,12 +52,31 @@ public class PublicInvoiceService {
             invoice = invoiceRepository.save(invoice);
         }
 
+        final Invoice currentInvoice = invoice;
         Workspace workspace = invoice.getWorkspace();
         Customer customer = invoice.getCustomer();
 
-        Optional<WorkspacePaymentSettings> settingsOpt = paymentSettingsRepository.findByWorkspaceId(workspace.getId());
-        boolean paymentEnabled = settingsOpt.map(WorkspacePaymentSettings::isEnabled).orElse(false);
-        String razorpayKeyId = paymentEnabled ? settingsOpt.get().getKeyId() : null;
+        List<WorkspacePaymentSettings> enabledSettings = paymentSettingsRepository
+                .findByWorkspaceIdAndIsEnabledTrue(workspace.getId());
+        boolean paymentEnabled = !enabledSettings.isEmpty();
+
+        // Determine primary payment method
+        WorkspacePaymentSettings primary = enabledSettings.stream()
+                .filter(WorkspacePaymentSettings::isPrimary)
+                .findFirst()
+                .orElse(enabledSettings.isEmpty() ? null : enabledSettings.get(0));
+
+        String primaryPaymentMethod = primary != null ? primary.getProvider() : null;
+
+        List<PaymentMethodDto> paymentMethods = enabledSettings.stream()
+                .map(s -> mapToPaymentMethodDto(s, primary != null && s.getId().equals(primary.getId()), currentInvoice))
+                .toList();
+
+        String razorpayKeyId = enabledSettings.stream()
+                .filter(s -> "RAZORPAY".equalsIgnoreCase(s.getProvider()))
+                .map(WorkspacePaymentSettings::getKeyId)
+                .findFirst()
+                .orElse(null);
 
         List<PublicInvoiceItemDto> itemDtos = invoice.getItems().stream()
                 .map(item -> new PublicInvoiceItemDto(
@@ -103,6 +122,8 @@ public class PublicInvoiceService {
 
                 itemDtos,
                 paymentEnabled,
+                primaryPaymentMethod,
+                paymentMethods,
                 razorpayKeyId
         );
     }
@@ -128,7 +149,7 @@ public class PublicInvoiceService {
         }
 
         Workspace workspace = invoice.getWorkspace();
-        WorkspacePaymentSettings settings = paymentSettingsRepository.findByWorkspaceId(workspace.getId())
+        WorkspacePaymentSettings settings = paymentSettingsRepository.findByWorkspaceIdAndProvider(workspace.getId(), "RAZORPAY")
                 .orElseThrow(() -> new PaymentGatewayException("Online payments are not configured by this biller"));
 
         if (!settings.isEnabled()) {
@@ -200,7 +221,7 @@ public class PublicInvoiceService {
         }
 
         Workspace workspace = invoice.getWorkspace();
-        WorkspacePaymentSettings settings = paymentSettingsRepository.findByWorkspaceId(workspace.getId())
+        WorkspacePaymentSettings settings = paymentSettingsRepository.findByWorkspaceIdAndProvider(workspace.getId(), "RAZORPAY")
                 .orElseThrow(() -> new PaymentGatewayException("Payment gateway not configured for this biller"));
 
         String secret = razorpayClientFactory.getDecryptedKeySecret(settings);
@@ -252,6 +273,140 @@ public class PublicInvoiceService {
                 request.razorpayPaymentId(),
                 "PAID"
         );
+    }
+
+    @Transactional
+    public NotifyOfflinePaymentResponse notifyOfflinePayment(String token, NotifyOfflinePaymentRequest request) {
+        Invoice invoice = tokenService.resolveInvoiceByToken(token);
+
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            throw new BadRequestException("This invoice has already been paid");
+        }
+        if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
+            throw new BadRequestException("This invoice has been cancelled");
+        }
+        if (invoice.getStatus() == InvoiceStatus.DRAFT) {
+            throw new BadRequestException("Draft invoices cannot accept payments");
+        }
+
+        String provider = request.provider().toUpperCase();
+        if (!provider.equals("UPI") && !provider.equals("BANK_TRANSFER")) {
+            throw new BadRequestException("Invalid payment method for offline payment notification");
+        }
+
+        boolean isConfigured = paymentSettingsRepository.findByWorkspaceIdAndProvider(invoice.getWorkspace().getId(), provider)
+                .map(WorkspacePaymentSettings::isEnabled)
+                .orElse(false);
+
+        if (!isConfigured) {
+            throw new BadRequestException(provider + " payment is not enabled for this biller");
+        }
+
+        String ref = request.transactionReference().trim();
+
+        Payment payment = Payment.builder()
+                .invoice(invoice)
+                .workspace(invoice.getWorkspace())
+                .amount(invoice.getNetTotal())
+                .status(PaymentStatus.PENDING)
+                .provider(provider)
+                .paymentMethod(provider)
+                .providerPaymentId(ref)
+                .currency("INR")
+                .notes(request.notes() != null && !request.notes().isBlank()
+                        ? request.notes().trim()
+                        : "Customer submitted offline payment reference: " + ref)
+                .build();
+
+        paymentRepository.save(payment);
+
+        log.info("Recorded customer offline payment proof for invoice {}: provider={}, ref={}",
+                invoice.getId(), provider, ref);
+
+        return new NotifyOfflinePaymentResponse(
+                true,
+                "Payment reference received! The biller will verify and update the invoice status shortly.",
+                ref
+        );
+    }
+
+    private PaymentMethodDto mapToPaymentMethodDto(WorkspacePaymentSettings settings, boolean isPrimary, Invoice invoice) {
+        String provider = settings.getProvider();
+        if ("RAZORPAY".equalsIgnoreCase(provider)) {
+            return new PaymentMethodDto(
+                    "RAZORPAY",
+                    isPrimary,
+                    settings.getKeyId(),
+                    null, null, null,
+                    null, null, null, null, null, null, null
+            );
+        } else if ("UPI".equalsIgnoreCase(provider)) {
+            String payee = settings.getPayeeName() != null && !settings.getPayeeName().isBlank()
+                    ? settings.getPayeeName()
+                    : invoice.getWorkspace().getName();
+            String upiUri = buildUpiUri(
+                    settings.getUpiId(),
+                    payee,
+                    invoice.getNetTotal(),
+                    invoice.getInvoiceNumber()
+            );
+            return new PaymentMethodDto(
+                    "UPI",
+                    isPrimary,
+                    null,
+                    settings.getUpiId(),
+                    payee,
+                    upiUri,
+                    null, null, null, null, null, null, null
+            );
+        } else if ("BANK_TRANSFER".equalsIgnoreCase(provider)) {
+            return new PaymentMethodDto(
+                    "BANK_TRANSFER",
+                    isPrimary,
+                    null,
+                    null, null, null,
+                    settings.getBankAccountName(),
+                    settings.getBankAccountNumber(),
+                    settings.getBankIfscCode(),
+                    settings.getBankName(),
+                    settings.getBankBranch(),
+                    settings.getBankSwiftCode(),
+                    settings.getInstructions()
+            );
+        }
+        return new PaymentMethodDto(
+                provider, isPrimary,
+                null, null, null, null,
+                null, null, null, null, null, null, null
+        );
+    }
+
+    private String buildUpiUri(String upiId, String payeeName, BigDecimal amount, String invoiceNumber) {
+        if (upiId == null || upiId.isBlank()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder("upi://pay?");
+        sb.append("pa=").append(urlEncode(upiId.trim()));
+        if (payeeName != null && !payeeName.isBlank()) {
+            sb.append("&pn=").append(urlEncode(payeeName.trim()));
+        }
+        if (amount != null) {
+            sb.append("&am=").append(String.format(java.util.Locale.US, "%.2f", amount));
+        }
+        String note = invoiceNumber != null && !invoiceNumber.isBlank()
+                ? "Invoice " + invoiceNumber.trim()
+                : "Invoice Payment";
+        sb.append("&tn=").append(urlEncode(note));
+        sb.append("&cu=INR");
+        return sb.toString();
+    }
+
+    private String urlEncode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+        } catch (Exception e) {
+            return value;
+        }
     }
 
     private boolean verifySignature(String orderId, String paymentId, String signature, String secret) {

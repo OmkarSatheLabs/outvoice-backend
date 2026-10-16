@@ -3,6 +3,7 @@ package com.omkarsathe.outvoice.workspace.payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,7 +12,9 @@ public interface WorkspacePaymentSettingsRepository extends JpaRepository<Worksp
 
     Optional<WorkspacePaymentSettings> findByWorkspaceIdAndProvider(UUID workspaceId, String provider);
 
-    default Optional<WorkspacePaymentSettings> findByWorkspaceId(UUID workspaceId) {
-        return findByWorkspaceIdAndProvider(workspaceId, "RAZORPAY");
-    }
+    List<WorkspacePaymentSettings> findByWorkspaceId(UUID workspaceId);
+
+    List<WorkspacePaymentSettings> findByWorkspaceIdAndIsEnabledTrue(UUID workspaceId);
+
+    Optional<WorkspacePaymentSettings> findByWorkspaceIdAndIsPrimaryTrue(UUID workspaceId);
 }

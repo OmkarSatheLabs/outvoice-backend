@@ -1,6 +1,8 @@
 package com.omkarsathe.outvoice.workspace.invoice;
 
 import com.omkarsathe.outvoice.workspace.invoice.dto.InvoiceShareResponse;
+import com.omkarsathe.outvoice.workspace.invoice.dto.RecordPaymentRequest;
+import com.omkarsathe.outvoice.workspace.payment.dto.PaymentDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -64,5 +66,24 @@ public class InvoiceController {
     @GetMapping("/{invoiceId}/share")
     public InvoiceShareResponse getShareLink(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
         return invoiceService.getShareLink(workspaceId, invoiceId);
+    }
+
+    @PostMapping("/{invoiceId}/mark-paid")
+    public InvoiceResponse markInvoiceAsPaid(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.markInvoiceAsPaid(workspaceId, invoiceId);
+    }
+
+    @PostMapping("/{invoiceId}/record-payment")
+    public InvoiceResponse recordPayment(
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID invoiceId,
+            @RequestBody RecordPaymentRequest request
+    ) {
+        return invoiceService.recordPayment(workspaceId, invoiceId, request);
+    }
+
+    @GetMapping("/{invoiceId}/payments")
+    public List<PaymentDto> getInvoicePayments(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.getInvoicePayments(workspaceId, invoiceId);
     }
 }
