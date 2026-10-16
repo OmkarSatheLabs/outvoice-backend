@@ -8,6 +8,7 @@ import com.omkarsathe.outvoice.workspace.member.MemberResponse;
 import com.omkarsathe.outvoice.workspace.user.UserMapper;
 import com.omkarsathe.outvoice.workspace.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -310,4 +311,25 @@ public class WorkspaceService {
 ////        return userWorkspaceRepository.findByUserId(userId).stream()
 ////                .anyMatch(uw -> uw.getWorkspace().getType() == WorkspaceType.PLATFORM_ADMIN);
 ////    }
+
+    @Transactional
+    public WorkspaceResponse updateWorkspace(UserDetails userDetails, UUID workspaceId, UpdateWorkspace request) {
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found: " + workspaceId));
+
+//        UUID loggedInUserId = UUID.fromString(userDetails.getUsername());
+
+//        boolean isMember = workspace.getMembers()
+//                .stream()
+//                .anyMatch(member -> member.getId().equals(loggedInUserId));
+//
+//        if (!isMember) {
+//            throw new ForbiddenException("You are not allowed to perform this operation", "Nope");
+//        }
+
+        workspace.setName(request.name());
+        workspace.setInvoiceNumberPrefix(request.invoiceNumberPrefix());
+
+        return workspaceResponseMapper.toResponse(workspaceRepository.save(workspace));
+    }
 }

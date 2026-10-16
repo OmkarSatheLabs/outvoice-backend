@@ -1,6 +1,7 @@
 package com.omkarsathe.outvoice.workspace;
 
 import com.omkarsathe.outvoice.workspace.member.MemberResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -61,4 +62,9 @@ public class WorkspaceController {
 //        UUID userId = UUID.fromString(userDetails.getUsername());
 //        workspaceService.declineInvite(userId, inviteId);
 //    }
+
+    @PutMapping("/workspaces/{workspaceId}")
+    public WorkspaceResponse updateWorkspace(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID workspaceId, @Valid @RequestBody UpdateWorkspace request) {
+        return workspaceService.updateWorkspace(userDetails, workspaceId, request);
+    }
 }

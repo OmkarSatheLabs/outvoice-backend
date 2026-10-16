@@ -39,15 +39,36 @@ public class CustomerService {
                                 "Workspace not found: " + workspaceId
                         ));
 
-        boolean emailExists = workspace.getCustomers()
-                .stream()
+        List<Customer> customers = workspace.getCustomers();
+
+        boolean emailExists = request.email() != null
+                && customers.stream()
                 .anyMatch(customer ->
-                        customer.getEmail() != null &&
-                                customer.getEmail().equalsIgnoreCase(request.email())
+                        customer.getEmail() != null
+                                && customer.getEmail().equalsIgnoreCase(request.email())
                 );
 
         if (emailExists) {
-            throw new BadRequestException("A customer with this email address is already part of this workspace.");
+            throw new BadRequestException(
+                    "A customer with this email address is already part of this workspace."
+            );
+        }
+
+        boolean mobileExists = request.mobile() != null
+                && request.phoneCode() != null
+                && customers.stream()
+                .anyMatch(customer ->
+                        customer.getPhoneCode() != null
+                                && customer.getPhoneCode().getCode()
+                                .equals(request.phoneCode())
+                                && customer.getMobile() != null
+                                && customer.getMobile().equals(request.mobile())
+                );
+
+        if (mobileExists) {
+            throw new BadRequestException(
+                    "A customer with this mobile number is already part of this workspace."
+            );
         }
 
         PhoneCode phoneCode = phoneCodeRepository.findByCode(request.phoneCode());
