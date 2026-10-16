@@ -21,6 +21,7 @@ import com.omkarsathe.outvoice.workspace.invoice.item.Item;
 import com.omkarsathe.outvoice.workspace.product.Product;
 import com.omkarsathe.outvoice.workspace.product.ProductRepository;
 import com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus;
+import com.omkarsathe.outvoice.workspace.invoice.dto.InvoiceShareResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -53,6 +54,7 @@ public class InvoiceService {
     private final PdfService pdfService;
     private final InvoicePdfProcessorHandler invoicePdfProcessorHandler;
     private final AuditService auditService;
+    private final InvoiceAccessTokenService tokenService;
 
     @Transactional
     public InvoiceResponse createInvoice(UUID workspaceId, CreateInvoice request) {
@@ -397,5 +399,19 @@ public class InvoiceService {
 
         pdfService.queue(invoice.getId(), PdfType.INVOICE);
         return new InvoicePdfStatusResponse(PdfProcessorStatus.PENDING, null, null);
+    }
+
+    @Transactional
+    public InvoiceShareResponse getShareLink(UUID workspaceId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        if (!invoice.getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Invoice not found: " + invoiceId);
+        }
+
+        InvoiceAccessToken token = tokenService.getOrCreateToken(invoice);
+        String url = tokenService.buildPublicInvoiceUrl(token.getTokenHash());
+        return new InvoiceShareResponse(token.getTokenHash(), url);
     }
 }

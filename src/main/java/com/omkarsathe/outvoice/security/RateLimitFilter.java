@@ -28,7 +28,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     );
 
     private static final Set<String> RATE_LIMITED_PREFIXES = Set.of(
-            "/api/reference/"
+            "/api/reference/",
+            "/api/public/"
     );
 
     @Value("${rate-limit.auth.capacity:10}")

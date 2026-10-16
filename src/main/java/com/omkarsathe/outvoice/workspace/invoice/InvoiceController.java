@@ -1,5 +1,6 @@
 package com.omkarsathe.outvoice.workspace.invoice;
 
+import com.omkarsathe.outvoice.workspace.invoice.dto.InvoiceShareResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -58,5 +59,10 @@ public class InvoiceController {
     @PostMapping("/{invoiceId}/pdf/retry")
     public InvoicePdfStatusResponse retryInvoicePdf(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
         return invoiceService.retryInvoicePdf(workspaceId, invoiceId);
+    }
+
+    @GetMapping("/{invoiceId}/share")
+    public InvoiceShareResponse getShareLink(@PathVariable UUID workspaceId, @PathVariable UUID invoiceId) {
+        return invoiceService.getShareLink(workspaceId, invoiceId);
     }
 }
