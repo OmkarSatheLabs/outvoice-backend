@@ -103,6 +103,10 @@ public class InvoiceService {
 
             Integer quantity = requestItem.quantity();
 
+            if (product != null) {
+                product.setStock(product.getStock() - quantity);
+            }
+
             BigDecimal productPrice = (product != null)
                     ? product.getPrice()
                     : requestItem.productPrice();
@@ -194,17 +198,36 @@ public class InvoiceService {
         return invoiceResponseMapper.toResponse(invoice);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public InvoiceSummaryResponse getSummary(UUID workspaceId) {
         List<Invoice> invoices = invoiceRepository.findByWorkspace_IdAndDeletedAtIsNull(workspaceId);
 
-        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal totalInvoiced = BigDecimal.ZERO;
+        BigDecimal totalPaid = BigDecimal.ZERO;
+        BigDecimal totalPending = BigDecimal.ZERO;
+        BigDecimal totalOverdue = BigDecimal.ZERO;
 
         for (Invoice invoice : invoices) {
-            total = total.add(invoice.getNetTotal());
+            if (invoice == null || invoice.getDeletedAt() != null || invoice.getStatus() == null) {
+                continue;
+            }
+
+            InvoiceStatus status = invoice.getStatus();
+            if (status == InvoiceStatus.DRAFT || status == InvoiceStatus.CANCELLED) {
+                continue;
+            }
+
+            BigDecimal amount = invoice.getNetTotal() != null ? invoice.getNetTotal() : BigDecimal.ZERO;
+            totalInvoiced = totalInvoiced.add(amount);
+
+            switch (status) {
+                case PAID -> totalPaid = totalPaid.add(amount);
+                case OVERDUE, DEFAULTED -> totalOverdue = totalOverdue.add(amount);
+                default -> totalPending = totalPending.add(amount);
+            }
         }
 
-        return new InvoiceSummaryResponse(total, total, total, total);
+        return new InvoiceSummaryResponse(totalInvoiced, totalPaid, totalPending, totalOverdue);
     }
 
     @Transactional
