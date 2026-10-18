@@ -24,3 +24,15 @@ services:
         value: https://dev.outvoice.omkarsathe.com,https://outvoice-web-dev.onrender.com,http://localhost:4200
       - key: FRONTEND_URL
         value: https://dev.outvoice.omkarsathe.com
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PASSWORD
+        value: lesxdmhhrspliapa
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        value: omkarsathe.pers@gmail.com
+      - key: TEXTBEE_API_KEY
+        value: txb_Q2z6ifOmFZQRRW4wuEuzKw2ORyDxCAZM
+      - key: TEXTBEE_DEVICE_ID
+        value: 6a902648f3dc6f0f7b66f05f

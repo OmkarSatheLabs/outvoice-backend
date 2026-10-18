@@ -28,7 +28,7 @@ spring:
           auth: true
           starttls:
             enable: true
-    notify: false
+    notify: true
 
 jwt:
   secret: ${JWT_SECRET:9f82c40b82f6e7c3b2a5d1e4c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6}
@@ -53,7 +53,7 @@ rate-limit:
 
 sms:
   provider: textbee
-  notify: false
+  notify: true
 
   textbee:
     base-url: https://api.textbee.dev
