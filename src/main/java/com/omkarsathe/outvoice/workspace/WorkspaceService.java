@@ -79,14 +79,14 @@ public class WorkspaceService {
 //    private final WorkspaceRepository workspaceRepository;
 ////    private final WorkspaceInvoiceRepository workspaceInvoiceRepository;
 //
-//    public WorkspaceResponse create(CreateWorkspace request) {
+//    public AdminWorkspaceResponse create(CreateWorkspace request) {
 //        Workspace workspace = Workspace.builder()
 //                .name(request.name())
 //                .build();
 //
 //        Workspace newWorkspace = workspaceRepository.save(workspace);
 //
-//        return new WorkspaceResponse(newWorkspace.getId(), newWorkspace.getName());
+//        return new AdminWorkspaceResponse(newWorkspace.getId(), newWorkspace.getName());
 //    }
 //
 ////    public boolean existsById(UUID id) {
@@ -165,7 +165,7 @@ public class WorkspaceService {
 ////        return List.of();
 ////    }
 ////
-////    public WorkspaceResponse createUserWorkspace(UUID userId, WorkspaceRequest request) {
+////    public AdminWorkspaceResponse createUserWorkspace(UUID userId, WorkspaceRequest request) {
 ////        UserEntity createdBy = userRepository.getUserById(userId)
 ////                .orElseThrow(
 ////                        () -> new RuntimeException("User with id " + userId + " does not exist")
@@ -204,7 +204,7 @@ public class WorkspaceService {
 ////
 ////        userWorkspace = userWorkspaceRepository.save(userWorkspace);
 ////
-////        return WorkspaceResponse.builder()
+////        return AdminWorkspaceResponse.builder()
 ////                .id(workspace.getId())
 ////                .name(workspace.getName())
 ////                .slug(workspace.getSlug())

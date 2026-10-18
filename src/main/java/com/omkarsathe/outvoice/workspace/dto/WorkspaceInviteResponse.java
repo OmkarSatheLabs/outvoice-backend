@@ -13,7 +13,7 @@
 //@AllArgsConstructor
 //public class WorkspaceInviteResponse {
 //    private UUID id;
-//    private WorkspaceResponse workspace;
+//    private AdminWorkspaceResponse workspace;
 //    private String invitedBy;
 //    private String status;
 //    private String token;

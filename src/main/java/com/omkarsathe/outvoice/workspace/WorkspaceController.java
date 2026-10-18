@@ -47,7 +47,7 @@ public class WorkspaceController {
 //    }
 //
 //    @PostMapping("/workspaces")
-//    public WorkspaceResponse createWorkspace(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody WorkspaceRequest workspaceRequest) {
+//    public AdminWorkspaceResponse createWorkspace(@AuthenticationPrincipal UserDetails userDetails, @Valid @RequestBody WorkspaceRequest workspaceRequest) {
 //        return workspaceService.createUserWorkspace(UUID.fromString(userDetails.getUsername()), workspaceRequest);
 //    }
 //
