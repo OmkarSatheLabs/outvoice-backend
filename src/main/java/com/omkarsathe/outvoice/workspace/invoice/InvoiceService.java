@@ -1,5 +1,7 @@
 package com.omkarsathe.outvoice.workspace.invoice;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
 import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.ResourceNotEditableException;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
@@ -173,7 +175,33 @@ public class InvoiceService {
 //            );
 //        }
 
-        auditService.log(InvoiceService.class.toString(), UUID.randomUUID(), UUID.randomUUID());
+        Map<String, Object> invoiceSnapshot = new HashMap<>();
+        invoiceSnapshot.put("invoiceNumber", invoice.getInvoiceNumber());
+        invoiceSnapshot.put("customerName", customer != null ? customer.getFullName() : "");
+        invoiceSnapshot.put("customerEmail", customer != null ? customer.getEmail() : "");
+        invoiceSnapshot.put("total", invoice.getTotal());
+        invoiceSnapshot.put("netTotal", invoice.getNetTotal());
+        invoiceSnapshot.put("issueDate", invoice.getIssueDate() != null ? invoice.getIssueDate().toString() : null);
+        invoiceSnapshot.put("dueDate", invoice.getDueDate() != null ? invoice.getDueDate().toString() : null);
+        invoiceSnapshot.put("itemCount", invoice.getItems() != null ? invoice.getItems().size() : 0);
+
+        String desc = invoice.getInvoiceNumber() != null
+                ? String.format("Created invoice %s for %s (Amount: %s)",
+                        invoice.getInvoiceNumber(),
+                        customer != null ? customer.getFullName() : "Customer",
+                        invoice.getNetTotal())
+                : String.format("Created draft invoice for %s (Amount: %s)",
+                        customer != null ? customer.getFullName() : "Customer",
+                        invoice.getNetTotal());
+
+        auditService.log(
+                workspaceId,
+                AuditAction.CREATE,
+                AuditResourceType.INVOICE,
+                invoice.getId(),
+                desc,
+                invoiceSnapshot
+        );
 
         return invoiceResponseMapper.toResponse(invoice);
     }
@@ -330,6 +358,26 @@ public class InvoiceService {
             workspace.setNextInvoiceSequence(workspace.getNextInvoiceSequence() + 1);
         }
 
+        Map<String, Object> updateDetails = new HashMap<>();
+        updateDetails.put("invoiceNumber", updatedInvoice.getInvoiceNumber());
+        updateDetails.put("customerName", customer != null ? customer.getFullName() : "");
+        updateDetails.put("total", updatedInvoice.getTotal());
+        updateDetails.put("netTotal", updatedInvoice.getNetTotal());
+        updateDetails.put("status", updatedInvoice.getStatus() != null ? updatedInvoice.getStatus().name() : null);
+
+        String updateDesc = updatedInvoice.getInvoiceNumber() != null
+                ? String.format("Updated invoice %s for %s", updatedInvoice.getInvoiceNumber(), customer != null ? customer.getFullName() : "Customer")
+                : String.format("Updated draft invoice for %s", customer != null ? customer.getFullName() : "Customer");
+
+        auditService.log(
+                workspaceId,
+                AuditAction.UPDATE,
+                AuditResourceType.INVOICE,
+                updatedInvoice.getId(),
+                updateDesc,
+                updateDetails
+        );
+
         return invoiceResponseMapper.toResponse(updatedInvoice);
     }
 
@@ -363,6 +411,18 @@ public class InvoiceService {
         invoice.setDeletedAt(Instant.now());
 
         invoiceRepository.save(invoice);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.DELETE,
+                AuditResourceType.INVOICE,
+                invoice.getId(),
+                String.format("Deleted invoice %s", invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber() : invoice.getId().toString()),
+                Map.of(
+                        "invoiceNumber", invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber() : "",
+                        "total", invoice.getNetTotal() != null ? invoice.getNetTotal() : BigDecimal.ZERO
+                )
+        );
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -489,6 +549,19 @@ public class InvoiceService {
         // Queue PDF regeneration so PAID status watermark is rendered
         pdfService.queue(saved.getId(), PdfType.INVOICE);
 
+        auditService.log(
+                workspaceId,
+                AuditAction.STATUS_CHANGE,
+                AuditResourceType.INVOICE,
+                saved.getId(),
+                String.format("Marked invoice %s as PAID", saved.getInvoiceNumber() != null ? saved.getInvoiceNumber() : saved.getId().toString()),
+                Map.of(
+                        "invoiceNumber", saved.getInvoiceNumber() != null ? saved.getInvoiceNumber() : "",
+                        "status", "PAID",
+                        "amount", saved.getNetTotal() != null ? saved.getNetTotal() : BigDecimal.ZERO
+                )
+        );
+
         logger.info("Invoice " + invoiceId + " marked as PAID");
         return invoiceResponseMapper.toResponse(saved);
     }
@@ -562,6 +635,22 @@ public class InvoiceService {
 
         // Queue PDF regeneration so PAID status watermark is rendered
         pdfService.queue(saved.getId(), PdfType.INVOICE);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.RECORD_PAYMENT,
+                AuditResourceType.INVOICE,
+                saved.getId(),
+                String.format("Recorded %s payment of %s for invoice %s",
+                        provider, amount, saved.getInvoiceNumber() != null ? saved.getInvoiceNumber() : saved.getId().toString()),
+                Map.of(
+                        "invoiceNumber", saved.getInvoiceNumber() != null ? saved.getInvoiceNumber() : "",
+                        "provider", provider,
+                        "amount", amount,
+                        "transactionReference", ref != null ? ref : "",
+                        "notes", notes != null ? notes : ""
+                )
+        );
 
         logger.info("Recorded payment for invoice " + invoiceId + ": provider=" + provider + ", amount=" + amount);
         return invoiceResponseMapper.toResponse(saved);

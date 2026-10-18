@@ -1,5 +1,7 @@
 package com.omkarsathe.outvoice.workspace;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
 import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.user.workspace.role.RoleNotFoundException;
@@ -11,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +45,14 @@ public class WorkspaceService {
 
         Workspace newWorkspace = workspaceRepository.save(workspace);
 
-        auditService.log(WorkspaceService.class.toString(), UUID.randomUUID(), UUID.randomUUID());
+        auditService.log(
+                newWorkspace.getId(),
+                AuditAction.CREATE,
+                AuditResourceType.WORKSPACE,
+                newWorkspace.getId(),
+                "Created workspace " + newWorkspace.getName(),
+                Map.of("name", newWorkspace.getName(), "invoiceNumberPrefix", newWorkspace.getInvoiceNumberPrefix())
+        );
 
         return workspaceResponseMapper.toResponse(newWorkspace);
     }
@@ -327,9 +339,28 @@ public class WorkspaceService {
 //            throw new ForbiddenException("You are not allowed to perform this operation", "Nope");
 //        }
 
+        Map<String, Object> diff = new HashMap<>();
+        if (!Objects.equals(workspace.getName(), request.name())) {
+            diff.put("name", Map.of("old", workspace.getName(), "new", request.name()));
+        }
+        if (!Objects.equals(workspace.getInvoiceNumberPrefix(), request.invoiceNumberPrefix())) {
+            diff.put("invoiceNumberPrefix", Map.of("old", workspace.getInvoiceNumberPrefix() != null ? workspace.getInvoiceNumberPrefix() : "", "new", request.invoiceNumberPrefix()));
+        }
+
         workspace.setName(request.name());
         workspace.setInvoiceNumberPrefix(request.invoiceNumberPrefix());
 
-        return workspaceResponseMapper.toResponse(workspaceRepository.save(workspace));
+        Workspace updated = workspaceRepository.save(workspace);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.UPDATE,
+                AuditResourceType.WORKSPACE,
+                workspaceId,
+                "Updated workspace settings for " + updated.getName(),
+                diff
+        );
+
+        return workspaceResponseMapper.toResponse(updated);
     }
 }

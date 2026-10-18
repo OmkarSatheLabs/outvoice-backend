@@ -1,5 +1,8 @@
 package com.omkarsathe.outvoice.workspace.member;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
+import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.workspace.Workspace;
 import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -21,6 +25,7 @@ public class MemberService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final MemberMapper memberMapper;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public List<MemberResponse> getMembers(UUID workspaceId) {
@@ -46,9 +51,18 @@ public class MemberService {
                 .user(user)
                 .build();
 
-        return memberMapper.toResponse(
-                memberRepository.save(member)
+        Member saved = memberRepository.save(member);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.INVITE,
+                AuditResourceType.MEMBER,
+                saved.getId(),
+                "Added member " + user.getFullName() + " to workspace",
+                Map.of("userId", user.getId(), "name", user.getFullName(), "email", user.getEmail() != null ? user.getEmail() : "")
         );
+
+        return memberMapper.toResponse(saved);
     }
 
     public List<MemberResponse> findByWorkspaceId(UUID workspaceId) {

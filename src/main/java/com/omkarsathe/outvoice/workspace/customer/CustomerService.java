@@ -1,5 +1,8 @@
 package com.omkarsathe.outvoice.workspace.customer;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
+import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.BadRequestException;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.phone.PhoneCode;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -22,6 +26,7 @@ public class CustomerService {
     private final CustomerResponseMapper customerResponseMapper;
     private final WorkspaceRepository workspaceRepository;
     private final PhoneCodeRepository phoneCodeRepository;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomers(UUID workspaceId) {
@@ -81,6 +86,21 @@ public class CustomerService {
                 .fullName(request.fullName())
                 .build();
 
-        return customerResponseMapper.toResponse(customerRepository.save(customer));
+        Customer saved = customerRepository.save(customer);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.CREATE,
+                AuditResourceType.CUSTOMER,
+                saved.getId(),
+                "Created customer " + saved.getFullName(),
+                Map.of(
+                        "fullName", saved.getFullName() != null ? saved.getFullName() : "",
+                        "email", saved.getEmail() != null ? saved.getEmail() : "",
+                        "mobile", saved.getMobile() != null ? saved.getMobile() : ""
+                )
+        );
+
+        return customerResponseMapper.toResponse(saved);
     }
 }

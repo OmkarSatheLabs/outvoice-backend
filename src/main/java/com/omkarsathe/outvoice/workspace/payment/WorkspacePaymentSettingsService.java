@@ -1,5 +1,8 @@
 package com.omkarsathe.outvoice.workspace.payment;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
+import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.BadRequestException;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.security.CryptoService;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +35,7 @@ public class WorkspacePaymentSettingsService {
     private final WorkspaceRepository workspaceRepository;
     private final CryptoService cryptoService;
     private final RazorpayClientFactory razorpayClientFactory;
+    private final AuditService auditService;
 
     @Value("${app.backend-url:http://localhost:8080}")
     private String backendUrl;
@@ -135,6 +140,16 @@ public class WorkspacePaymentSettingsService {
         }
 
         WorkspacePaymentSettings saved = paymentSettingsRepository.save(settings);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.CONFIG_UPDATE,
+                AuditResourceType.PAYMENT_SETTINGS,
+                saved.getId(),
+                "Updated payment gateway configuration for " + provider,
+                Map.of("provider", provider, "isEnabled", saved.isEnabled(), "isPrimary", saved.isPrimary())
+        );
+
         return mapToConfigResponse(saved);
     }
 
@@ -156,6 +171,15 @@ public class WorkspacePaymentSettingsService {
             g.setPrimary(g.getProvider().equals(provider));
             paymentSettingsRepository.save(g);
         }
+
+        auditService.log(
+                workspaceId,
+                AuditAction.UPDATE,
+                AuditResourceType.PAYMENT_SETTINGS,
+                target.getId(),
+                "Set " + provider + " as primary payment method",
+                Map.of("provider", provider, "isPrimary", true)
+        );
     }
 
     @Transactional
@@ -180,6 +204,15 @@ public class WorkspacePaymentSettingsService {
         }
 
         paymentSettingsRepository.save(settings);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.UPDATE,
+                AuditResourceType.PAYMENT_SETTINGS,
+                settings.getId(),
+                (isEnabled ? "Enabled" : "Disabled") + " payment gateway " + provider,
+                Map.of("provider", provider, "isEnabled", isEnabled)
+        );
     }
 
     @Transactional
@@ -204,6 +237,15 @@ public class WorkspacePaymentSettingsService {
                     paymentSettingsRepository.save(other);
                 });
             }
+
+            auditService.log(
+                    workspaceId,
+                    AuditAction.DELETE,
+                    AuditResourceType.PAYMENT_SETTINGS,
+                    settings.getId(),
+                    "Removed payment gateway configuration for " + provider,
+                    Map.of("provider", provider)
+            );
         });
     }
 

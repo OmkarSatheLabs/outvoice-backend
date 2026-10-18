@@ -22,22 +22,34 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "workspace_id")
+    private UUID workspaceId;
+
+    @Column(nullable = false, length = 50)
+    private String action;
+
+    @Column(name = "resource_type", nullable = false, length = 100)
     private String resourceType;
 
-    @Column(nullable = false)
-    private UUID changedBy;
-
-    @Column(nullable = false)
+    @Column(name = "resource_id", nullable = false)
     private UUID resourceId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "changed_by")
+    private UUID changedBy;
+
+    @Column(name = "actor_name", length = 200)
+    private String actorName;
+
+    @Column(name = "actor_email", length = 200)
+    private String actorEmail;
+
+    @Column(name = "change_description", nullable = false, columnDefinition = "TEXT")
     private String changeDescription;
 
     @Column(nullable = false, columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private JsonNode changes;
 
-    @Column(nullable = false)
+    @Column(name = "changed_at", nullable = false)
     private Instant changedAt;
 }

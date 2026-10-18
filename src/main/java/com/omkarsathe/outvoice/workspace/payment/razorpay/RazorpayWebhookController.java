@@ -1,5 +1,8 @@
 package com.omkarsathe.outvoice.workspace.payment.razorpay;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
+import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.workspace.invoice.Invoice;
 import com.omkarsathe.outvoice.workspace.invoice.InvoiceRepository;
 import com.omkarsathe.outvoice.workspace.invoice.InvoiceStatus;
@@ -37,6 +40,7 @@ public class RazorpayWebhookController {
     private final RazorpayClientFactory razorpayClientFactory;
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final AuditService auditService;
 
     @PostMapping("/{workspaceId}")
     @Transactional
@@ -124,6 +128,19 @@ public class RazorpayWebhookController {
                     invoice.setStatus(InvoiceStatus.PAID);
                     invoiceRepository.save(invoice);
                     log.info("Invoice {} updated to PAID via webhook event {}", invoice.getId(), event);
+
+                    auditService.log(
+                            workspaceId,
+                            AuditAction.PAYMENT_RECEIVED,
+                            AuditResourceType.INVOICE,
+                            invoice.getId(),
+                            String.format("Online payment of %s received via Razorpay (%s) for invoice %s",
+                                    amount, method, invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber() : invoice.getId().toString()),
+                            Map.of("amount", amount, "method", method, "paymentId", paymentId, "orderId", orderId != null ? orderId : ""),
+                            "Razorpay Webhook",
+                            "webhook@razorpay.com",
+                            null
+                    );
                 }
             } else if (invoiceIdStr != null && !invoiceIdStr.isBlank()) {
                 try {
@@ -147,6 +164,19 @@ public class RazorpayWebhookController {
                         invoice.setStatus(InvoiceStatus.PAID);
                         invoiceRepository.save(invoice);
                         log.info("Created new successful payment and marked invoice {} as PAID", invoice.getId());
+
+                        auditService.log(
+                                workspaceId,
+                                AuditAction.PAYMENT_RECEIVED,
+                                AuditResourceType.INVOICE,
+                                invoice.getId(),
+                                String.format("Online payment of %s received via Razorpay (%s) for invoice %s",
+                                        amount, method, invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber() : invoice.getId().toString()),
+                                Map.of("amount", amount, "method", method, "paymentId", paymentId, "orderId", orderId != null ? orderId : ""),
+                                "Razorpay Webhook",
+                                "webhook@razorpay.com",
+                                null
+                        );
                     }
                 } catch (Exception e) {
                     log.error("Failed to parse invoice ID from notes: {}", invoiceIdStr, e);
