@@ -42,4 +42,29 @@ class StorageConfigTest {
 
         assertDoesNotThrow(() -> StorageConfig.validateR2Properties(r2));
     }
+
+    @Test
+    void determineProvider_defaultsToLocal_whenUnconfigured() {
+        StorageProperties properties = new StorageProperties();
+        properties.setProvider("");
+        assertEquals("local", StorageConfig.determineProvider(properties));
+    }
+
+    @Test
+    void determineProvider_respectsExplicitProvider() {
+        StorageProperties properties = new StorageProperties();
+        properties.setProvider("r2");
+        assertEquals("r2", StorageConfig.determineProvider(properties));
+
+        properties.setProvider("local");
+        assertEquals("local", StorageConfig.determineProvider(properties));
+    }
+
+    @Test
+    void determineProvider_autoDetectsR2_whenBucketConfigured() {
+        StorageProperties properties = new StorageProperties();
+        properties.setProvider("");
+        properties.getR2().setBucket("outvoice-dev");
+        assertEquals("r2", StorageConfig.determineProvider(properties));
+    }
 }

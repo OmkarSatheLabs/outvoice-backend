@@ -29,16 +29,30 @@ public class LocalObjectStorageService implements ObjectStorageService {
 
     public LocalObjectStorageService(StorageProperties properties) {
         String baseDir = properties.getLocal().getBaseDirectory();
-        this.baseDirectory = Paths.get(baseDir != null && !baseDir.isBlank() ? baseDir : "./uploads")
+        Path targetDir = Paths.get(baseDir != null && !baseDir.isBlank() ? baseDir : "./uploads")
                 .toAbsolutePath()
                 .normalize();
         this.publicBaseUrl = cleanBaseUrl(properties.getLocal().getPublicBaseUrl());
 
+        Path establishedDir;
         try {
-            Files.createDirectories(this.baseDirectory);
-        } catch (IOException e) {
-            throw new StorageException("Could not initialize local storage directory: " + this.baseDirectory, e);
+            Files.createDirectories(targetDir);
+            establishedDir = targetDir;
+        } catch (Exception e) {
+            log.warn("Could not create local storage directory {}: {}. Attempting fallback to temp directory...", targetDir, e.getMessage());
+            try {
+                Path fallback = Paths.get(System.getProperty("java.io.tmpdir", "/tmp"))
+                        .resolve("outvoice-uploads")
+                        .toAbsolutePath()
+                        .normalize();
+                Files.createDirectories(fallback);
+                establishedDir = fallback;
+                log.info("Using fallback local storage directory: {}", establishedDir);
+            } catch (Exception ex) {
+                throw new StorageException("Could not initialize local storage directory: " + targetDir, e);
+            }
         }
+        this.baseDirectory = establishedDir;
     }
 
     @Override

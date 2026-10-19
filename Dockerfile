@@ -19,11 +19,14 @@ FROM eclipse-temurin:21-jre-alpine AS runner
 
 WORKDIR /app
 
-# Create unprivileged user
-RUN addgroup -S spring && adduser -S spring -G spring
+# Create unprivileged user and ensure writable directories
+RUN addgroup -S spring && adduser -S spring -G spring \
+    && mkdir -p /app/uploads \
+    && chown -R spring:spring /app
+
 USER spring:spring
 
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder --chown=spring:spring /app/target/*.jar app.jar
 
 ENV PORT=8080
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss512k -XX:+ExitOnOutOfMemoryError"

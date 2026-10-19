@@ -4,7 +4,6 @@ import com.omkarsathe.outvoice.storage.ObjectStorageService;
 import com.omkarsathe.outvoice.storage.local.LocalObjectStorageService;
 import com.omkarsathe.outvoice.storage.r2.CloudflareR2ObjectStorageService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,19 +27,40 @@ import java.util.List;
 public class StorageConfig {
 
     @Bean
-    @ConditionalOnProperty(name = "outvoice.storage.provider", havingValue = "local", matchIfMissing = true)
-    public ObjectStorageService localStorageService(StorageProperties properties) {
-        log.info("Initialized Local Object Storage provider with base directory: {}",
-                properties.getLocal().getBaseDirectory());
-        return new LocalObjectStorageService(properties);
+    public ObjectStorageService objectStorageService(StorageProperties properties) {
+        String effectiveProvider = determineProvider(properties);
+
+        if ("r2".equalsIgnoreCase(effectiveProvider)) {
+            validateR2Properties(properties.getR2());
+            S3Client s3Client = buildR2S3Client(properties.getR2());
+            log.info("Initialized Cloudflare R2 Object Storage provider with bucket: {} and publicBaseUrl: {}",
+                    properties.getR2().getBucket(), properties.getR2().getPublicBaseUrl());
+            return new CloudflareR2ObjectStorageService(s3Client, properties);
+        } else {
+            log.info("Initialized Local Object Storage provider with base directory: {}",
+                    properties.getLocal().getBaseDirectory());
+            return new LocalObjectStorageService(properties);
+        }
     }
 
-    @Bean(destroyMethod = "close")
-    @ConditionalOnProperty(name = "outvoice.storage.provider", havingValue = "r2")
-    public S3Client r2S3Client(StorageProperties properties) {
-        validateR2Properties(properties.getR2());
+    public static String determineProvider(StorageProperties properties) {
+        if (properties == null) {
+            return "local";
+        }
+        String p = properties.getProvider();
+        if (p != null && !p.isBlank()) {
+            return p.trim().toLowerCase();
+        }
+        // Auto-detect R2 if bucket or accountId is configured
+        if (properties.getR2() != null &&
+                ((properties.getR2().getBucket() != null && !properties.getR2().getBucket().isBlank()) ||
+                 (properties.getR2().getAccountId() != null && !properties.getR2().getAccountId().isBlank()))) {
+            return "r2";
+        }
+        return "local";
+    }
 
-        StorageProperties.R2Properties r2 = properties.getR2();
+    public static S3Client buildR2S3Client(StorageProperties.R2Properties r2) {
         String rawEndpoint = r2.getEndpoint();
         URI endpointUri;
         if (rawEndpoint != null && !rawEndpoint.isBlank()) {
@@ -70,14 +90,6 @@ public class StorageConfig {
                         .retryStrategy(RetryMode.STANDARD)
                         .build())
                 .build();
-    }
-
-    @Bean
-    @ConditionalOnProperty(name = "outvoice.storage.provider", havingValue = "r2")
-    public ObjectStorageService cloudflareR2StorageService(S3Client s3Client, StorageProperties properties) {
-        log.info("Initialized Cloudflare R2 Object Storage provider with bucket: {} and publicBaseUrl: {}",
-                properties.getR2().getBucket(), properties.getR2().getPublicBaseUrl());
-        return new CloudflareR2ObjectStorageService(s3Client, properties);
     }
 
     public static void validateR2Properties(StorageProperties.R2Properties r2) {

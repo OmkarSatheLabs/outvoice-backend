@@ -48,7 +48,7 @@ app:
 
 outvoice:
   storage:
-    provider: ${STORAGE_PROVIDER:local}
+    provider: ${STORAGE_PROVIDER:}
     local:
       base-directory: ${STORAGE_LOCAL_BASE_DIR:./uploads}
       public-base-url: ${STORAGE_LOCAL_PUBLIC_BASE_URL:http://localhost:8080/files}

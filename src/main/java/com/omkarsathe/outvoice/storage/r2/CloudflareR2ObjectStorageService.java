@@ -22,7 +22,7 @@ import java.util.Map;
  * Connects via Cloudflare's S3-compatible API.
  */
 @Slf4j
-public class CloudflareR2ObjectStorageService implements ObjectStorageService {
+public class CloudflareR2ObjectStorageService implements ObjectStorageService, AutoCloseable {
 
     private final S3Client s3Client;
     private final String bucket;
@@ -186,5 +186,17 @@ public class CloudflareR2ObjectStorageService implements ObjectStorageService {
             trimmed = trimmed.substring(0, trimmed.length() - 1);
         }
         return trimmed;
+    }
+
+    @Override
+    public void close() {
+        if (s3Client != null) {
+            try {
+                s3Client.close();
+                log.debug("Successfully closed Cloudflare R2 S3Client");
+            } catch (Exception e) {
+                log.warn("Error closing Cloudflare R2 S3Client: {}", e.getMessage());
+            }
+        }
     }
 }
