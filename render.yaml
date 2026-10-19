@@ -36,3 +36,17 @@ services:
         value: txb_Q2z6ifOmFZQRRW4wuEuzKw2ORyDxCAZM
       - key: TEXTBEE_DEVICE_ID
         value: 6a902648f3dc6f0f7b66f05f
+      - key: STORAGE_PROVIDER
+        value: r2
+      - key: CLOUDFLARE_R2_ACCOUNT_ID
+        value: 2d58083865bc97b758e31ee417e6365d
+      - key: CLOUDFLARE_R2_BUCKET
+        value: outvoice-dev
+      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
+        value: bd42dd592fb42982dddce87321b98007
+      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
+        value: f5417ded3846dbb2d751ec0e6343c5d637adf34a6d9329fb753307c6da39ecea
+      - key: CLOUDFLARE_R2_ENDPOINT
+        value: https://2d58083865bc97b758e31ee417e6365d.r2.cloudflarestorage.com
+      - key: CLOUDFLARE_R2_PUBLIC_BASE_URL
+        value: https://files.dev.outvoice.omkarsathe.com

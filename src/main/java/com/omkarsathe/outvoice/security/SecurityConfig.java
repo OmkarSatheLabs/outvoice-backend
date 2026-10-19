@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/reference/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/files/**").permitAll()
                         .requestMatchers("/api/webhooks/**").permitAll()
                         .requestMatchers("/api/workspaces/invites/resolve").permitAll()
                         .requestMatchers("/api/workspaces/invites/signup-and-accept").permitAll()
@@ -60,6 +61,7 @@ public class SecurityConfig {
         publicConfig.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         publicConfig.setAllowedHeaders(List.of("*"));
         source.registerCorsConfiguration("/api/public/**", publicConfig);
+        source.registerCorsConfiguration("/files/**", publicConfig);
 
         CorsConfiguration config = new CorsConfiguration();
         List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))

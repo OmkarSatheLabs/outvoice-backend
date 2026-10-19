@@ -48,16 +48,24 @@ public class ProductController {
     public ProductResponse uploadImage(
             @PathVariable UUID workspaceId,
             @PathVariable UUID productId,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
     ) {
-        return productService.uploadImage(workspaceId, productId, file);
+        UUID userId = extractUserId(userDetails);
+        return productService.uploadImage(workspaceId, productId, file, userId);
     }
 
     @DeleteMapping("/{productId}/image")
     public ProductResponse removeImage(
             @PathVariable UUID workspaceId,
-            @PathVariable UUID productId
+            @PathVariable UUID productId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
     ) {
-        return productService.removeImage(workspaceId, productId);
+        UUID userId = extractUserId(userDetails);
+        return productService.removeImage(workspaceId, productId, userId);
+    }
+
+    private UUID extractUserId(org.springframework.security.core.userdetails.UserDetails userDetails) {
+        return userDetails != null ? UUID.fromString(userDetails.getUsername()) : null;
     }
 }

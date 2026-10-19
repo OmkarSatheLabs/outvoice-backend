@@ -40,6 +40,14 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "image_key")
+    private String imageKey;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC, createdAt ASC")
+    @Builder.Default
+    private java.util.List<ProductImage> images = new java.util.ArrayList<>();
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

@@ -1,5 +1,6 @@
 package com.omkarsathe.outvoice.workspace.storefront;
 
+import com.omkarsathe.outvoice.storage.ObjectStorageService;
 import com.omkarsathe.outvoice.workspace.product.Product;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicProductDto;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicStorefrontDto;
@@ -16,6 +17,7 @@ import java.util.List;
 public class StorefrontResponseMapper {
 
     private final StorefrontUrlService storefrontUrlService;
+    private final ObjectStorageService objectStorageService;
 
     public StorefrontResponse toResponse(Storefront storefront) {
         if (storefront == null) {
@@ -87,6 +89,10 @@ public class StorefrontResponseMapper {
             return null;
         }
 
+        String imageUrl = product.getImageKey() != null && !product.getImageKey().isBlank()
+                ? objectStorageService.getUrl(product.getImageKey())
+                : product.getImageUrl();
+
         return new PublicProductDto(
                 product.getId(),
                 product.getName(),
@@ -94,7 +100,7 @@ public class StorefrontResponseMapper {
                 product.getPrice(),
                 product.getStock(),
                 product.getUnit(),
-                product.getImageUrl(),
+                imageUrl,
                 product.getStock() > 0
         );
     }
