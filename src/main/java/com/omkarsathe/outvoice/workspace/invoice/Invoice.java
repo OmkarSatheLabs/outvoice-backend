@@ -37,6 +37,18 @@ public class Invoice {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Column(name = "customer_email")
+    private String customerEmail;
+
+    @Column(name = "customer_phone")
+    private String customerPhone;
+
+    @Column(name = "customer_address", columnDefinition = "TEXT")
+    private String customerAddress;
+
     @Column
     private String invoiceNumber;
 

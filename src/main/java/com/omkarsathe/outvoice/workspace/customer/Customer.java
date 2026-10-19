@@ -40,7 +40,21 @@ public class Customer {
     @Column()
     private String mobile;
 
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
     @Builder.Default
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<Invoice> invoices = new ArrayList<>();
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private java.time.Instant createdAt;
+
+    @org.hibernate.annotations.UpdateTimestamp
+    @Column(name = "updated_at")
+    private java.time.Instant updatedAt;
+
+    @Column(name = "deleted_at")
+    private java.time.Instant deletedAt;
 }

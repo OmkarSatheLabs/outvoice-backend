@@ -23,4 +23,30 @@ public class CustomerController {
     public List<CustomerResponse> getCustomers(@PathVariable UUID workspaceId) {
         return customerService.getCustomers(workspaceId);
     }
+
+    @GetMapping("/workspaces/{workspaceId}/customers/{customerId}")
+    public CustomerResponse getCustomer(
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID customerId
+    ) {
+        return customerService.getCustomer(workspaceId, customerId);
+    }
+
+    @PutMapping("/workspaces/{workspaceId}/customers/{customerId}")
+    public CustomerResponse updateCustomer(
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID customerId,
+            @Valid @RequestBody UpdateCustomer request
+    ) {
+        return customerService.updateCustomer(workspaceId, customerId, request);
+    }
+
+    @DeleteMapping("/workspaces/{workspaceId}/customers/{customerId}")
+    public org.springframework.http.ResponseEntity<Void> deleteCustomer(
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID customerId
+    ) {
+        customerService.deleteCustomer(workspaceId, customerId);
+        return org.springframework.http.ResponseEntity.noContent().build();
+    }
 }

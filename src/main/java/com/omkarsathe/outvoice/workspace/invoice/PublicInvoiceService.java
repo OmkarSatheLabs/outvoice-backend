@@ -89,9 +89,16 @@ public class PublicInvoiceService {
 
         boolean hasPdf = invoice.getPdfLocation() != null || invoice.getPdfStatus() != null;
 
-        String customerPhone = customer != null
-                ? ((customer.getPhoneCode() != null ? customer.getPhoneCode().getCode() + " " : "") + (customer.getMobile() != null ? customer.getMobile() : "")).trim()
-                : null;
+        String customerName = invoice.getCustomerName() != null ? invoice.getCustomerName() : (customer != null ? customer.getFullName() : null);
+        String customerEmail = invoice.getCustomerEmail() != null ? invoice.getCustomerEmail() : (customer != null ? customer.getEmail() : null);
+        String customerPhone = invoice.getCustomerPhone() != null ? invoice.getCustomerPhone() : (customer != null
+                ? (((customer.getPhoneCode() != null && customer.getPhoneCode().getCode() != null) ? customer.getPhoneCode().getCode() + " " : "")
+                    + (customer.getMobile() != null ? customer.getMobile() : "")).trim()
+                : null);
+        if (customerPhone != null && customerPhone.isBlank()) {
+            customerPhone = null;
+        }
+        String customerAddress = invoice.getCustomerAddress() != null ? invoice.getCustomerAddress() : (customer != null ? customer.getAddress() : null);
 
         return new PublicInvoiceDto(
                 invoice.getId(),
@@ -115,10 +122,10 @@ public class PublicInvoiceService {
                 null, // gstNumber
                 null, // panNumber
 
-                customer != null ? customer.getFullName() : null,
-                customer != null ? customer.getEmail() : null,
+                customerName,
+                customerEmail,
                 customerPhone,
-                null, // customerBillingAddress
+                customerAddress,
 
                 itemDtos,
                 paymentEnabled,
@@ -190,9 +197,9 @@ public class PublicInvoiceService {
             paymentRepository.save(payment);
 
             Customer customer = invoice.getCustomer();
-            String customerName = customer != null ? customer.getFullName() : "";
-            String customerEmail = customer != null ? customer.getEmail() : "";
-            String customerPhone = customer != null ? customer.getMobile() : "";
+            String customerName = invoice.getCustomerName() != null ? invoice.getCustomerName() : (customer != null ? customer.getFullName() : "");
+            String customerEmail = invoice.getCustomerEmail() != null ? invoice.getCustomerEmail() : (customer != null ? customer.getEmail() : "");
+            String customerPhone = invoice.getCustomerPhone() != null ? invoice.getCustomerPhone() : (customer != null ? customer.getMobile() : "");
 
             return new CreateRazorpayOrderResponse(
                     orderId,

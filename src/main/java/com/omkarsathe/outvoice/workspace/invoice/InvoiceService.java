@@ -82,9 +82,21 @@ public class InvoiceService {
 
         BigDecimal total = BigDecimal.ZERO;
 
+        String customerPhone = customer != null
+                ? (((customer.getPhoneCode() != null && customer.getPhoneCode().getCode() != null) ? customer.getPhoneCode().getCode() + " " : "")
+                    + (customer.getMobile() != null ? customer.getMobile() : "")).trim()
+                : null;
+        if (customerPhone != null && customerPhone.isBlank()) {
+            customerPhone = null;
+        }
+
         Invoice invoice = Invoice.builder()
                 .workspace(workspace)
                 .customer(customer)
+                .customerName(customer != null ? customer.getFullName() : null)
+                .customerEmail(customer != null ? customer.getEmail() : null)
+                .customerPhone(customerPhone)
+                .customerAddress(customer != null ? customer.getAddress() : null)
                 .invoiceNumber(request.isDraft() ? null : generateInvoiceNumber(workspace.getInvoiceNumberPrefix(), workspace.getNextInvoiceSequence()))
                 .tax(request.tax())
                 .discount(request.discount())
@@ -297,7 +309,19 @@ public class InvoiceService {
             );
         }
 
+        String customerPhone = customer != null
+                ? (((customer.getPhoneCode() != null && customer.getPhoneCode().getCode() != null) ? customer.getPhoneCode().getCode() + " " : "")
+                    + (customer.getMobile() != null ? customer.getMobile() : "")).trim()
+                : null;
+        if (customerPhone != null && customerPhone.isBlank()) {
+            customerPhone = null;
+        }
+
         invoice.setCustomer(customer);
+        invoice.setCustomerName(customer != null ? customer.getFullName() : null);
+        invoice.setCustomerEmail(customer != null ? customer.getEmail() : null);
+        invoice.setCustomerPhone(customerPhone);
+        invoice.setCustomerAddress(customer != null ? customer.getAddress() : null);
         invoice.setInvoiceNumber(request.isDraft() ? null : generateInvoiceNumber(workspace.getInvoiceNumberPrefix(), workspace.getNextInvoiceSequence()));
         invoice.setIssueDate(request.issueDate());
         invoice.setDueDate(request.dueDate());

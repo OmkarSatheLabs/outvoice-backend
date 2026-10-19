@@ -361,27 +361,42 @@ public class PdfService {
         billToCard.addElement(billToHeader);
 
         Customer customer = invoice.getCustomer();
-        String custName = customer != null && customer.getFullName() != null && !customer.getFullName().isBlank()
-                ? customer.getFullName()
-                : "Valued Customer";
+        String custName = invoice.getCustomerName() != null && !invoice.getCustomerName().isBlank()
+                ? invoice.getCustomerName()
+                : (customer != null && customer.getFullName() != null && !customer.getFullName().isBlank()
+                    ? customer.getFullName()
+                    : "Valued Customer");
         Paragraph custPara = new Paragraph(custName, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, BRAND_DARK));
         custPara.setSpacingAfter(2f);
         billToCard.addElement(custPara);
 
-        String custCompany = custName + " Enterprise";
-        String custEmail = customer != null && customer.getEmail() != null && !customer.getEmail().isBlank()
-                ? customer.getEmail()
-                : "client@example.com";
-        String custPhone = customer != null && customer.getMobile() != null && !customer.getMobile().isBlank()
-                ? (customer.getPhoneCode() != null ? customer.getPhoneCode().getCode() + " " : "") + customer.getMobile()
-                : "+91 98765 43210";
+        String custEmail = invoice.getCustomerEmail() != null && !invoice.getCustomerEmail().isBlank()
+                ? invoice.getCustomerEmail()
+                : (customer != null && customer.getEmail() != null && !customer.getEmail().isBlank()
+                    ? customer.getEmail()
+                    : "client@example.com");
+
+        String custPhone = invoice.getCustomerPhone() != null && !invoice.getCustomerPhone().isBlank()
+                ? invoice.getCustomerPhone()
+                : (customer != null && customer.getMobile() != null && !customer.getMobile().isBlank()
+                    ? ((customer.getPhoneCode() != null ? customer.getPhoneCode().getCode() + " " : "") + customer.getMobile()).trim()
+                    : "+91 98765 43210");
+
+        String custAddress = invoice.getCustomerAddress() != null && !invoice.getCustomerAddress().isBlank()
+                ? invoice.getCustomerAddress().trim()
+                : (customer != null && customer.getAddress() != null && !customer.getAddress().isBlank()
+                    ? customer.getAddress().trim()
+                    : null);
+
+        StringBuilder addressBuilder = new StringBuilder();
+        if (custAddress != null) {
+            addressBuilder.append(custAddress).append("\n");
+        }
+        addressBuilder.append("Email: ").append(custEmail).append("\n");
+        addressBuilder.append("Phone: ").append(custPhone);
 
         Paragraph toDetails = new Paragraph(
-                custCompany + "\n" +
-                "742 Innovation Crescent, Sector 4\n" +
-                "Bengaluru, Karnataka 560001, India\n" +
-                "Email: " + custEmail + "\n" +
-                "Phone: " + custPhone,
+                addressBuilder.toString(),
                 FontFactory.getFont(FontFactory.HELVETICA, 8f, TEXT_SLATE)
         );
         toDetails.setLeading(11f);

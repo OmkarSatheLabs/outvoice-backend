@@ -30,10 +30,17 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomers(UUID workspaceId) {
-        return customerRepository.findAllByWorkspaceId(workspaceId)
+        return customerRepository.findAllByWorkspace_IdAndDeletedAtIsNull(workspaceId)
                 .stream()
                 .map(customerResponseMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerResponse getCustomer(UUID workspaceId, UUID customerId) {
+        Customer customer = customerRepository.findByIdAndWorkspace_IdAndDeletedAtIsNull(customerId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + customerId));
+        return customerResponseMapper.toResponse(customer);
     }
 
     @Transactional
@@ -44,13 +51,15 @@ public class CustomerService {
                                 "Workspace not found: " + workspaceId
                         ));
 
-        List<Customer> customers = workspace.getCustomers();
+        List<Customer> activeCustomers = customerRepository.findAllByWorkspace_IdAndDeletedAtIsNull(workspaceId);
 
         boolean emailExists = request.email() != null
-                && customers.stream()
+                && !request.email().isBlank()
+                && activeCustomers.stream()
+                .filter(customer -> customer.getDeletedAt() == null)
                 .anyMatch(customer ->
                         customer.getEmail() != null
-                                && customer.getEmail().equalsIgnoreCase(request.email())
+                                && customer.getEmail().equalsIgnoreCase(request.email().trim())
                 );
 
         if (emailExists) {
@@ -60,14 +69,16 @@ public class CustomerService {
         }
 
         boolean mobileExists = request.mobile() != null
+                && !request.mobile().isBlank()
                 && request.phoneCode() != null
-                && customers.stream()
+                && !request.phoneCode().isBlank()
+                && activeCustomers.stream()
+                .filter(customer -> customer.getDeletedAt() == null)
                 .anyMatch(customer ->
                         customer.getPhoneCode() != null
-                                && customer.getPhoneCode().getCode()
-                                .equals(request.phoneCode())
+                                && customer.getPhoneCode().getCode().equals(request.phoneCode().trim())
                                 && customer.getMobile() != null
-                                && customer.getMobile().equals(request.mobile())
+                                && customer.getMobile().equals(request.mobile().trim())
                 );
 
         if (mobileExists) {
@@ -76,14 +87,21 @@ public class CustomerService {
             );
         }
 
-        PhoneCode phoneCode = phoneCodeRepository.findByCode(request.phoneCode());
+        PhoneCode phoneCode = (request.phoneCode() != null && !request.phoneCode().isBlank())
+                ? phoneCodeRepository.findByCode(request.phoneCode().trim())
+                : null;
+
+        String trimmedAddress = (request.address() != null && !request.address().isBlank()) ? request.address().trim() : null;
+        String trimmedEmail = (request.email() != null && !request.email().isBlank()) ? request.email().trim().toLowerCase() : null;
+        String trimmedMobile = (request.mobile() != null && !request.mobile().isBlank()) ? request.mobile().trim() : null;
 
         Customer customer = Customer.builder()
                 .workspace(workspace)
-                .email(request.email())
+                .email(trimmedEmail)
                 .phoneCode(phoneCode)
-                .mobile(request.mobile())
-                .fullName(request.fullName())
+                .mobile(trimmedMobile)
+                .fullName(request.fullName().trim())
+                .address(trimmedAddress)
                 .build();
 
         Customer saved = customerRepository.save(customer);
@@ -97,10 +115,92 @@ public class CustomerService {
                 Map.of(
                         "fullName", saved.getFullName() != null ? saved.getFullName() : "",
                         "email", saved.getEmail() != null ? saved.getEmail() : "",
-                        "mobile", saved.getMobile() != null ? saved.getMobile() : ""
+                        "mobile", saved.getMobile() != null ? saved.getMobile() : "",
+                        "address", saved.getAddress() != null ? saved.getAddress() : ""
                 )
         );
 
         return customerResponseMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public CustomerResponse updateCustomer(UUID workspaceId, UUID customerId, UpdateCustomer request) {
+        Customer customer = customerRepository.findByIdAndWorkspace_IdAndDeletedAtIsNull(customerId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + customerId));
+
+        List<Customer> otherActiveCustomers = customerRepository.findAllByWorkspace_IdAndDeletedAtIsNull(workspaceId)
+                .stream()
+                .filter(c -> !c.getId().equals(customerId))
+                .toList();
+
+        if (request.email() != null && !request.email().isBlank()) {
+            boolean emailExists = otherActiveCustomers.stream()
+                    .anyMatch(c -> c.getEmail() != null && c.getEmail().equalsIgnoreCase(request.email().trim()));
+            if (emailExists) {
+                throw new BadRequestException("A customer with this email address is already part of this workspace.");
+            }
+        }
+
+        if (request.mobile() != null && !request.mobile().isBlank() && request.phoneCode() != null && !request.phoneCode().isBlank()) {
+            boolean mobileExists = otherActiveCustomers.stream()
+                    .anyMatch(c -> c.getPhoneCode() != null && c.getPhoneCode().getCode().equals(request.phoneCode().trim())
+                            && c.getMobile() != null && c.getMobile().equals(request.mobile().trim()));
+            if (mobileExists) {
+                throw new BadRequestException("A customer with this mobile number is already part of this workspace.");
+            }
+        }
+
+        PhoneCode phoneCode = (request.phoneCode() != null && !request.phoneCode().isBlank())
+                ? phoneCodeRepository.findByCode(request.phoneCode().trim())
+                : null;
+
+        String trimmedAddress = (request.address() != null && !request.address().isBlank()) ? request.address().trim() : null;
+        String trimmedEmail = (request.email() != null && !request.email().isBlank()) ? request.email().trim().toLowerCase() : null;
+        String trimmedMobile = (request.mobile() != null && !request.mobile().isBlank()) ? request.mobile().trim() : null;
+
+        customer.setFullName(request.fullName().trim());
+        customer.setEmail(trimmedEmail);
+        customer.setPhoneCode(phoneCode);
+        customer.setMobile(trimmedMobile);
+        customer.setAddress(trimmedAddress);
+
+        Customer saved = customerRepository.save(customer);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.UPDATE,
+                AuditResourceType.CUSTOMER,
+                saved.getId(),
+                "Updated customer " + saved.getFullName(),
+                Map.of(
+                        "fullName", saved.getFullName() != null ? saved.getFullName() : "",
+                        "email", saved.getEmail() != null ? saved.getEmail() : "",
+                        "mobile", saved.getMobile() != null ? saved.getMobile() : "",
+                        "address", saved.getAddress() != null ? saved.getAddress() : ""
+                )
+        );
+
+        return customerResponseMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public void deleteCustomer(UUID workspaceId, UUID customerId) {
+        Customer customer = customerRepository.findByIdAndWorkspace_IdAndDeletedAtIsNull(customerId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + customerId));
+
+        customer.setDeletedAt(java.time.Instant.now());
+        customerRepository.save(customer);
+
+        auditService.log(
+                workspaceId,
+                AuditAction.DELETE,
+                AuditResourceType.CUSTOMER,
+                customer.getId(),
+                "Deleted customer " + customer.getFullName(),
+                Map.of(
+                        "fullName", customer.getFullName() != null ? customer.getFullName() : "",
+                        "deletedAt", customer.getDeletedAt().toString()
+                )
+        );
     }
 }

@@ -14,6 +14,7 @@ public record CustomerResponse(
         String email,
         PhoneCodeResponse phoneCode,
         String mobile,
+        String address,
         List<CustomerInvoiceResponse> invoices,
         BigDecimal totalInvoiced,
         BigDecimal totalCollected,

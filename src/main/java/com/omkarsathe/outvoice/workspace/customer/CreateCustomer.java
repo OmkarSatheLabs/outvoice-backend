@@ -21,6 +21,9 @@ public record CreateCustomer(
 
         @NotBlank(message = "Full name is required")
         @Size(max = 200, message = "Full name must be at most 200 characters")
-        String fullName
+        String fullName,
+
+        @Size(max = 500, message = "Address must not exceed 500 characters")
+        String address
 ) implements ContactRequest {
 }
