@@ -8,9 +8,8 @@ public record CreateProduct(
         @NotBlank(message = "Name is required")
         String name,
 
-        int stock,
+        Integer stock,
 
-        @NotBlank(message = "Unit is required")
         String unit,
 
         @NotNull(message = "Price cannot be null")
