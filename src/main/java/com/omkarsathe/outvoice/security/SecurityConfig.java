@@ -53,6 +53,14 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        CorsConfiguration publicConfig = new CorsConfiguration();
+        publicConfig.addAllowedOriginPattern("*");
+        publicConfig.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        publicConfig.setAllowedHeaders(List.of("*"));
+        source.registerCorsConfiguration("/api/public/**", publicConfig);
+
         CorsConfiguration config = new CorsConfiguration();
         List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
                 .map(String::trim)
@@ -60,9 +68,13 @@ public class SecurityConfig {
         config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public org.springframework.web.filter.ForwardedHeaderFilter forwardedHeaderFilter() {
+        return new org.springframework.web.filter.ForwardedHeaderFilter();
     }
 
     @Bean

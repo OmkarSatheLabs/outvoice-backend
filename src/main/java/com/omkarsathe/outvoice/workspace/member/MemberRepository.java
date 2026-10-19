@@ -15,6 +15,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
 
     List<Member> findByUserId(UUID userId);
 
+    boolean existsByWorkspaceIdAndUserId(UUID workspaceId, UUID userId);
+
     @Query("""
         SELECT m.workspace.id AS workspaceId,
                COUNT(m) AS total

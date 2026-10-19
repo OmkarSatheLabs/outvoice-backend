@@ -10,7 +10,11 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     List<Product> findAllByWorkspace_IdAndDeletedAtIsNull(UUID workspaceId);
 
+    List<Product> findAllByWorkspace_IdAndStatusAndDeletedAtIsNull(UUID workspaceId, ProductStatus status);
+
     Optional<Product> findByIdAndWorkspace_IdAndDeletedAtIsNull(UUID id, UUID workspaceId);
+
+    Optional<Product> findByIdAndWorkspace_IdAndStatusAndDeletedAtIsNull(UUID id, UUID workspaceId, ProductStatus status);
 
     Optional<Product> findByIdAndDeletedAtIsNull(UUID id);
 

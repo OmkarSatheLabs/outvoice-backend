@@ -43,6 +43,8 @@ public class ProductService {
 
         int stock = request.stock() != null ? request.stock() : 0;
         String unit = (request.unit() != null && !request.unit().isBlank()) ? request.unit().trim() : null;
+        ProductStatus status = request.status() != null ? request.status() : ProductStatus.DRAFT;
+        String description = (request.description() != null && !request.description().isBlank()) ? request.description().trim() : null;
 
         Product product = Product.builder()
                 .workspace(workspace)
@@ -50,6 +52,8 @@ public class ProductService {
                 .stock(stock)
                 .unit(unit)
                 .price(request.price())
+                .status(status)
+                .description(description)
                 .build();
 
         Product saved = productRepository.save(product);
@@ -83,6 +87,12 @@ public class ProductService {
         product.setPrice(request.price());
         product.setStock(stock);
         product.setUnit(unit);
+        if (request.status() != null) {
+            product.setStatus(request.status());
+        }
+        if (request.description() != null) {
+            product.setDescription(request.description().trim().isEmpty() ? null : request.description().trim());
+        }
 
         Product saved = productRepository.save(product);
 

@@ -12,6 +12,8 @@ public record ProductResponse(
         int stock,
         String unit,
         BigDecimal price,
-        String imageUrl
+        String imageUrl,
+        ProductStatus status,
+        String description
 ) {
 }

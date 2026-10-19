@@ -40,6 +40,14 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private ProductStatus status = ProductStatus.DRAFT;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 }
