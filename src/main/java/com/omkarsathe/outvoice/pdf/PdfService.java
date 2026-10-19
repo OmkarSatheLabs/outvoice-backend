@@ -16,11 +16,8 @@ import com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus;
 import com.omkarsathe.outvoice.pdf.processor.PdfType;
 import com.omkarsathe.outvoice.sms.SmsMessage;
 import com.omkarsathe.outvoice.sms.SmsService;
-import com.omkarsathe.outvoice.workspace.Workspace;
 import com.omkarsathe.outvoice.workspace.customer.Customer;
-import com.omkarsathe.outvoice.workspace.invoice.Invoice;
-import com.omkarsathe.outvoice.workspace.invoice.InvoiceRepository;
-import com.omkarsathe.outvoice.workspace.invoice.InvoiceStatus;
+import com.omkarsathe.outvoice.workspace.invoice.*;
 import com.omkarsathe.outvoice.workspace.invoice.item.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +55,7 @@ public class PdfService {
     private final MailService mailService;
     private final SmsService smsService;
     private final ApplicationEventPublisher eventPublisher;
+    private final InvoiceAccessTokenService tokenService;
 
     // OutVoice brand design palette
     private static final Color BRAND_PRIMARY = new Color(108, 92, 231);      // #6C5CE7 - signature violet
@@ -143,6 +141,9 @@ public class PdfService {
 
             logger.info("Successfully processed PDF generation for id: " + request.getId());
 
+            InvoiceAccessToken token = tokenService.getOrCreateToken(invoice);
+            String url = tokenService.buildPublicInvoiceUrl(token.getTokenHash());
+
             if (enableEmailNotification) {
                 Customer customer = invoice.getCustomer();
 
@@ -177,9 +178,8 @@ public class PdfService {
                     smsService.queue(
                             new SmsMessage(
                                     recipient,
-                                    "Hi " + customer.getFullName() + ", \nA new invoice has been sent to you by "
-                                            + senderName
-                                            + " on OutVoice.\nPlease visit " + request.getLocation() + " for further actions.\nPowered by OutVoice [" + frontendUrl + "]"
+                                    "Hi " + customer.getFullName() + ", " + senderName + " has sent you a new invoice via OutVoice."
+                                            + "\nView your invoice and take the necessary action here: " + url + " \nPowered by OutVoice: " + frontendUrl
                             )
                     );
 
