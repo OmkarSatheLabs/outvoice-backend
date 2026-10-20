@@ -5,14 +5,10 @@ import com.omkarsathe.outvoice.audit.log.AuditResourceType;
 import com.omkarsathe.outvoice.audit.log.AuditService;
 import com.omkarsathe.outvoice.common.exception.ResourceNotEditableException;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
-import com.omkarsathe.outvoice.mail.MailRequest;
 import com.omkarsathe.outvoice.mail.MailService;
-import com.omkarsathe.outvoice.mail.MailType;
 import com.omkarsathe.outvoice.pdf.PdfService;
-import com.omkarsathe.outvoice.pdf.processor.InvoicePdfProcessorData;
 import com.omkarsathe.outvoice.pdf.processor.InvoicePdfProcessorHandler;
 import com.omkarsathe.outvoice.pdf.processor.PdfType;
-import com.omkarsathe.outvoice.sms.SmsMessage;
 import com.omkarsathe.outvoice.sms.SmsService;
 import com.omkarsathe.outvoice.workspace.Workspace;
 import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
@@ -29,7 +25,6 @@ import com.omkarsathe.outvoice.workspace.payment.Payment;
 import com.omkarsathe.outvoice.workspace.payment.PaymentRepository;
 import com.omkarsathe.outvoice.workspace.payment.PaymentStatus;
 import com.omkarsathe.outvoice.workspace.payment.dto.PaymentDto;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,9 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
@@ -56,10 +48,7 @@ public class InvoiceService {
     private final CustomerRepository customerRepository;
     private final InvoiceResponseMapper invoiceResponseMapper;
     private final ProductRepository productRepository;
-    private final SmsService smsService;
-    private final MailService mailService;
     private final PdfService pdfService;
-    private final InvoicePdfProcessorHandler invoicePdfProcessorHandler;
     private final AuditService auditService;
     private final InvoiceAccessTokenService tokenService;
     private final PaymentRepository paymentRepository;
@@ -158,13 +147,13 @@ public class InvoiceService {
             workspace.setNextInvoiceSequence(workspace.getNextInvoiceSequence() + 1);
         }
 
-        boolean hasEmail = customer.getEmail() != null
-                && !customer.getEmail().isBlank();
-
-        boolean hasPhone = customer.getPhoneCode() != null
-                && !customer.getPhoneCode().getCode().isBlank()
-                && customer.getMobile() != null
-                && !customer.getMobile().isBlank();
+//        boolean hasEmail = customer.getEmail() != null
+//                && !customer.getEmail().isBlank();
+//
+//        boolean hasPhone = customer.getPhoneCode() != null
+//                && !customer.getPhoneCode().getCode().isBlank()
+//                && customer.getMobile() != null
+//                && !customer.getMobile().isBlank();
 
 //        if (hasEmail) {
 //            Map<String, Object> variables = new HashMap<>();
@@ -309,19 +298,18 @@ public class InvoiceService {
             );
         }
 
-        String customerPhone = customer != null
-                ? (((customer.getPhoneCode() != null && customer.getPhoneCode().getCode() != null) ? customer.getPhoneCode().getCode() + " " : "")
-                    + (customer.getMobile() != null ? customer.getMobile() : "")).trim()
-                : null;
-        if (customerPhone != null && customerPhone.isBlank()) {
+        String customerPhone = ((customer.getPhoneCode() != null && customer.getPhoneCode().getCode() != null ? customer.getPhoneCode().getCode() + " " : "")
+            + (customer.getMobile() != null ? customer.getMobile() : "")).trim();
+
+        if (customerPhone.isBlank()) {
             customerPhone = null;
         }
 
         invoice.setCustomer(customer);
-        invoice.setCustomerName(customer != null ? customer.getFullName() : null);
-        invoice.setCustomerEmail(customer != null ? customer.getEmail() : null);
+        invoice.setCustomerName(customer.getFullName());
+        invoice.setCustomerEmail(customer.getEmail());
         invoice.setCustomerPhone(customerPhone);
-        invoice.setCustomerAddress(customer != null ? customer.getAddress() : null);
+        invoice.setCustomerAddress(customer.getAddress());
         invoice.setInvoiceNumber(request.isDraft() ? null : generateInvoiceNumber(workspace.getInvoiceNumberPrefix(), workspace.getNextInvoiceSequence()));
         invoice.setIssueDate(request.issueDate());
         invoice.setDueDate(request.dueDate());
@@ -384,14 +372,14 @@ public class InvoiceService {
 
         Map<String, Object> updateDetails = new HashMap<>();
         updateDetails.put("invoiceNumber", updatedInvoice.getInvoiceNumber());
-        updateDetails.put("customerName", customer != null ? customer.getFullName() : "");
+        updateDetails.put("customerName", customer.getFullName());
         updateDetails.put("total", updatedInvoice.getTotal());
         updateDetails.put("netTotal", updatedInvoice.getNetTotal());
         updateDetails.put("status", updatedInvoice.getStatus() != null ? updatedInvoice.getStatus().name() : null);
 
         String updateDesc = updatedInvoice.getInvoiceNumber() != null
-                ? String.format("Updated invoice %s for %s", updatedInvoice.getInvoiceNumber(), customer != null ? customer.getFullName() : "Customer")
-                : String.format("Updated draft invoice for %s", customer != null ? customer.getFullName() : "Customer");
+                ? String.format("Updated invoice %s for %s", updatedInvoice.getInvoiceNumber(), customer.getFullName())
+                : String.format("Updated draft invoice for %s", customer.getFullName());
 
         auditService.log(
                 workspaceId,
@@ -481,11 +469,7 @@ public class InvoiceService {
 
         byte[] pdfBytes;
         try {
-            if (invoice.getPdfLocation() != null && Files.exists(Paths.get(invoice.getPdfLocation()))) {
-                pdfBytes = Files.readAllBytes(Paths.get(invoice.getPdfLocation()));
-            } else {
-                pdfBytes = pdfService.generatePdf(invoice);
-            }
+            pdfBytes = pdfService.getInvoicePdfBytes(invoice);
         } catch (Exception e) {
             logger.severe("Failed to read or generate PDF for invoice " + invoiceId + ": " + e.getMessage());
             throw new RuntimeException("Failed to generate or retrieve invoice PDF", e);
@@ -625,7 +609,7 @@ public class InvoiceService {
                 .toList();
 
         if (!pendingPayments.isEmpty()) {
-            Payment p = pendingPayments.get(0);
+            Payment p = pendingPayments.getFirst();
             p.setStatus(PaymentStatus.SUCCESS);
             p.setProvider(provider);
             p.setPaymentMethod(provider);

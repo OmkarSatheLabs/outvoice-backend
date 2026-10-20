@@ -16,6 +16,9 @@ import com.omkarsathe.outvoice.pdf.processor.PdfProcessorStatus;
 import com.omkarsathe.outvoice.pdf.processor.PdfType;
 import com.omkarsathe.outvoice.sms.SmsMessage;
 import com.omkarsathe.outvoice.sms.SmsService;
+import com.omkarsathe.outvoice.storage.ObjectStorageService;
+import com.omkarsathe.outvoice.storage.model.StorageObject;
+import com.omkarsathe.outvoice.storage.model.UploadRequest;
 import com.omkarsathe.outvoice.workspace.customer.Customer;
 import com.omkarsathe.outvoice.workspace.invoice.*;
 import com.omkarsathe.outvoice.workspace.invoice.item.Item;
@@ -26,14 +29,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -56,6 +60,7 @@ public class PdfService {
     private final SmsService smsService;
     private final ApplicationEventPublisher eventPublisher;
     private final InvoiceAccessTokenService tokenService;
+    private final ObjectStorageService objectStorageService;
 
     // OutVoice brand design palette
     private static final Color BRAND_PRIMARY = new Color(108, 92, 231);      // #6C5CE7 - signature violet
@@ -69,9 +74,6 @@ public class PdfService {
 
     private static final DecimalFormat MONEY_FORMAT = new DecimalFormat("#,##0.00");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
-
-    @Value("${app.pdf.storage-path:/data/pdfs}")
-    private String pdfStoragePath = "/data/pdfs";
 
     @Value("${spring.mail.notify:false}")
     private boolean enableEmailNotification = false;
@@ -117,18 +119,39 @@ public class PdfService {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new InvoicePdfGenerationException("Invoice not found: " + invoiceId));
 
+        String objectKey = null;
         try {
             byte[] pdfBytes = generatePdf(invoice);
 
+            UUID workspaceId = invoice.getWorkspace() != null ? invoice.getWorkspace().getId() : null;
             String fileName = request.getId() + ".pdf";
-            Path targetDir = Paths.get(pdfStoragePath);
-            Files.createDirectories(targetDir);
-            Path targetFile = targetDir.resolve(fileName);
+            objectKey = (workspaceId != null)
+                    ? "workspaces/" + workspaceId + "/invoices/" + invoiceId + "/" + fileName
+                    : "invoices/" + invoiceId + "/" + fileName;
 
-            Files.write(targetFile, pdfBytes,
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("invoiceId", invoiceId.toString());
+            if (workspaceId != null) {
+                metadata.put("workspaceId", workspaceId.toString());
+            }
+            if (invoice.getInvoiceNumber() != null) {
+                metadata.put("invoiceNumber", invoice.getInvoiceNumber());
+            }
 
-            request.setLocation(targetFile.toString());
+            UploadRequest uploadRequest = new UploadRequest(
+                    objectKey,
+                    new ByteArrayInputStream(pdfBytes),
+                    pdfBytes.length,
+                    "application/pdf",
+                    metadata,
+                    true
+            );
+
+            objectStorageService.upload(uploadRequest);
+
+            String oldObjectKey = invoice.getPdfLocation();
+
+            request.setLocation(objectKey);
             request.setProcessedAt(Instant.now());
             request.setStatus(PdfProcessorStatus.COMPLETED);
             request.setError(null);
@@ -136,8 +159,20 @@ public class PdfService {
             pdfProcessorRepository.save(request);
 
             invoice.setPdfStatus(PdfProcessorStatus.COMPLETED);
-            invoice.setPdfLocation(targetFile.toString());
+            invoice.setPdfLocation(objectKey);
             invoiceRepository.save(invoice);
+
+            // Clean up previous PDF from storage if key changed
+            if (oldObjectKey != null && !oldObjectKey.isBlank() && !oldObjectKey.equals(objectKey)) {
+                try {
+                    if (!oldObjectKey.startsWith("/") && !oldObjectKey.startsWith("\\")) {
+                        objectStorageService.delete(oldObjectKey);
+                        logger.info("Successfully deleted previous invoice PDF from storage: " + oldObjectKey);
+                    }
+                } catch (Exception deleteEx) {
+                    logger.warning("Failed to delete replaced invoice PDF from storage: " + oldObjectKey + " - " + deleteEx.getMessage());
+                }
+            }
 
             logger.info("Successfully processed PDF generation for id: " + request.getId());
 
@@ -154,7 +189,8 @@ public class PdfService {
                 if (hasEmail) {
                     Map<String, Object> variables = new HashMap<>();
                     variables.put("invoiceNumber", invoice.getId());
-                    variables.put("invoiceUrl", request.getLocation());
+                    String publicUrl = objectStorageService.getUrl(objectKey);
+                    variables.put("invoiceUrl", publicUrl != null ? publicUrl : url);
 
                     mailService.queue(new MailRequest(customer.getEmail(), MailType.INVOICE, variables, List.of(request.getLocation())));
 
@@ -187,19 +223,69 @@ public class PdfService {
                 }
             }
         } catch (Exception e) {
-            request.setStatus(PdfProcessorStatus.FAILED);
-            request.setError(e.getMessage());
-            request.setProcessedAt(Instant.now());
-            pdfProcessorRepository.save(request);
+            if (objectKey != null) {
+                try {
+                    objectStorageService.delete(objectKey);
+                } catch (Exception cleanupEx) {
+                    logger.warning("Failed to delete uploaded object during rollback: " + objectKey);
+                }
+            }
 
-            invoice.setPdfStatus(PdfProcessorStatus.FAILED);
-            invoiceRepository.save(invoice);
+            try {
+                request.setStatus(PdfProcessorStatus.FAILED);
+                request.setError(e.getMessage());
+                request.setProcessedAt(Instant.now());
+                pdfProcessorRepository.save(request);
+
+                invoice.setPdfStatus(PdfProcessorStatus.FAILED);
+                invoiceRepository.save(invoice);
+            } catch (Exception saveEx) {
+                logger.warning("Failed to record failure status in database: " + saveEx.getMessage());
+            }
 
             logger.severe("Failed processing PDF generation for id: " + request.getId() + " - " + e.getMessage());
 
             throw new InvoicePdfGenerationException(
                     "Failed to generate invoice PDF", e);
         }
+    }
+
+    /**
+     * Loads the stored PDF for the given invoice, or falls back to generating it.
+     */
+    public byte[] getInvoicePdfBytes(Invoice invoice) throws DocumentException, IOException {
+        String location = invoice.getPdfLocation();
+        if (location != null && !location.isBlank()) {
+            if (!location.startsWith("/") && !location.startsWith("\\") && objectStorageService.exists(location)) {
+                try (InputStream is = objectStorageService.load(location).inputStream()) {
+                    return is.readAllBytes();
+                } catch (Exception e) {
+                    logger.warning("Failed to load PDF from storage for key: " + location + " - " + e.getMessage());
+                }
+            }
+            try {
+                Path localPath = Paths.get(location);
+                if (Files.exists(localPath)) {
+                    return Files.readAllBytes(localPath);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return generatePdf(invoice);
+    }
+
+    /**
+     * Retrieves the storage object container for a stored PDF.
+     */
+    public StorageObject loadPdf(String objectKey) {
+        return objectStorageService.load(objectKey);
+    }
+
+    /**
+     * Generates the client-accessible URL for a stored PDF object key.
+     */
+    public String getPdfUrl(String objectKey) {
+        return objectStorageService.getUrl(objectKey);
     }
 
     /**

@@ -25,7 +25,7 @@ public class PdfServiceTest {
 
     @BeforeEach
     void setUp() {
-        pdfService = new PdfService(null, null, null, null, null, null, null);
+        pdfService = new PdfService(null, null, null, null, null, null, null, null);
     }
 
     @Test
