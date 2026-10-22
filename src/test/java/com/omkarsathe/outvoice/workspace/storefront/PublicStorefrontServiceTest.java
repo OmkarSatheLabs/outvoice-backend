@@ -5,8 +5,19 @@ import com.omkarsathe.outvoice.workspace.Workspace;
 import com.omkarsathe.outvoice.workspace.product.Product;
 import com.omkarsathe.outvoice.workspace.product.ProductRepository;
 import com.omkarsathe.outvoice.workspace.product.ProductStatus;
+import com.omkarsathe.outvoice.workspace.customer.Customer;
+import com.omkarsathe.outvoice.workspace.customer.CustomerRepository;
+import com.omkarsathe.outvoice.workspace.invoice.CreateInvoice;
+import com.omkarsathe.outvoice.workspace.invoice.Invoice;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceAccessToken;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceAccessTokenService;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceRepository;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceResponse;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceService;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicProductDto;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicStorefrontDto;
+import com.omkarsathe.outvoice.workspace.storefront.dto.StorefrontCheckoutRequest;
+import com.omkarsathe.outvoice.workspace.storefront.dto.StorefrontCheckoutResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +45,14 @@ class PublicStorefrontServiceTest {
     private StorefrontResponseMapper storefrontResponseMapper;
     @Mock
     private StorefrontUrlService storefrontUrlService;
+    @Mock
+    private CustomerRepository customerRepository;
+    @Mock
+    private InvoiceService invoiceService;
+    @Mock
+    private InvoiceRepository invoiceRepository;
+    @Mock
+    private InvoiceAccessTokenService tokenService;
 
     private PublicStorefrontService publicStorefrontService;
 
@@ -49,7 +68,11 @@ class PublicStorefrontServiceTest {
                 storefrontDomainRepository,
                 productRepository,
                 storefrontResponseMapper,
-                storefrontUrlService
+                storefrontUrlService,
+                customerRepository,
+                invoiceService,
+                invoiceRepository,
+                tokenService
         );
 
         workspace = Workspace.builder()
@@ -176,5 +199,73 @@ class PublicStorefrontServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () ->
                 publicStorefrontService.getPublishedProduct(storefrontId, otherProductId));
+    }
+
+    @Test
+    void checkout_createsInvoiceAndReturnsAccessDetails() {
+        when(storefrontRepository.findById(storefrontId)).thenReturn(Optional.of(storefront));
+
+        UUID prodId = UUID.randomUUID();
+        Product product = Product.builder()
+                .id(prodId)
+                .workspace(workspace)
+                .name("Ceramic Mug")
+                .price(BigDecimal.valueOf(25.00))
+                .stock(50)
+                .status(ProductStatus.PUBLISHED)
+                .build();
+        when(productRepository.findById(prodId)).thenReturn(Optional.of(product));
+
+        when(customerRepository.findByWorkspace_IdAndEmailIgnoreCaseAndDeletedAtIsNull(workspaceId, "jane@example.com"))
+                .thenReturn(Optional.empty());
+
+        Customer savedCustomer = Customer.builder()
+                .id(UUID.randomUUID())
+                .workspace(workspace)
+                .fullName("Jane Doe")
+                .email("jane@example.com")
+                .build();
+        when(customerRepository.save(any(Customer.class))).thenReturn(savedCustomer);
+
+        UUID invoiceId = UUID.randomUUID();
+        InvoiceResponse mockInvoiceResponse = new InvoiceResponse(
+                invoiceId, null, null, "INV-001",
+                java.time.LocalDate.now(), java.time.LocalDate.now().plusDays(7),
+                BigDecimal.valueOf(50.00), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(50.00),
+                null, null, null, List.of()
+        );
+        when(invoiceService.createInvoice(eq(workspaceId), any(CreateInvoice.class)))
+                .thenReturn(mockInvoiceResponse);
+
+        Invoice mockInvoice = Invoice.builder()
+                .id(invoiceId)
+                .invoiceNumber("INV-001")
+                .netTotal(BigDecimal.valueOf(50.00))
+                .build();
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(mockInvoice));
+
+        InvoiceAccessToken mockToken = InvoiceAccessToken.builder()
+                .tokenHash("sec_tok_12345")
+                .build();
+        when(tokenService.getOrCreateToken(mockInvoice)).thenReturn(mockToken);
+
+        StorefrontCheckoutRequest req = new StorefrontCheckoutRequest(
+                "Jane Doe",
+                "jane@example.com",
+                "9876543210",
+                "123 Street",
+                "Handle with care",
+                List.of(new StorefrontCheckoutRequest.CartItemRequest(prodId, 2))
+        );
+
+        StorefrontCheckoutResponse response = publicStorefrontService.checkout(storefrontId, req);
+
+        assertNotNull(response);
+        assertEquals(invoiceId, response.invoiceId());
+        assertEquals("INV-001", response.invoiceNumber());
+        assertEquals("sec_tok_12345", response.invoiceAccessToken());
+        assertEquals(BigDecimal.valueOf(50.00), response.totalAmount());
+        assertEquals("Jane Doe", response.customerName());
+        assertEquals("jane@example.com", response.customerEmail());
     }
 }

@@ -2,7 +2,10 @@ package com.omkarsathe.outvoice.workspace.storefront;
 
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicProductDto;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicStorefrontDto;
+import com.omkarsathe.outvoice.workspace.storefront.dto.StorefrontCheckoutRequest;
+import com.omkarsathe.outvoice.workspace.storefront.dto.StorefrontCheckoutResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,5 +60,13 @@ public class PublicStorefrontController {
             @PathVariable UUID productId
     ) {
         return ResponseEntity.ok(publicStorefrontService.getPublishedProduct(storefrontId, productId));
+    }
+
+    @PostMapping("/{storefrontId}/checkout")
+    public ResponseEntity<StorefrontCheckoutResponse> checkout(
+            @PathVariable UUID storefrontId,
+            @Valid @RequestBody StorefrontCheckoutRequest request
+    ) {
+        return ResponseEntity.ok(publicStorefrontService.checkout(storefrontId, request));
     }
 }

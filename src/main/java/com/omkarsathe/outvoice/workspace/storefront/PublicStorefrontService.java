@@ -1,16 +1,31 @@
 package com.omkarsathe.outvoice.workspace.storefront;
 
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
+import com.omkarsathe.outvoice.workspace.customer.Customer;
+import com.omkarsathe.outvoice.workspace.customer.CustomerRepository;
+import com.omkarsathe.outvoice.workspace.invoice.CreateInvoice;
+import com.omkarsathe.outvoice.workspace.invoice.Invoice;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceAccessTokenService;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceRepository;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceResponse;
+import com.omkarsathe.outvoice.workspace.invoice.InvoiceService;
+import com.omkarsathe.outvoice.workspace.invoice.item.CreateItem;
 import com.omkarsathe.outvoice.workspace.product.Product;
 import com.omkarsathe.outvoice.workspace.product.ProductRepository;
 import com.omkarsathe.outvoice.workspace.product.ProductStatus;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicProductDto;
 import com.omkarsathe.outvoice.workspace.storefront.dto.PublicStorefrontDto;
+import com.omkarsathe.outvoice.workspace.storefront.dto.StorefrontCheckoutRequest;
+import com.omkarsathe.outvoice.workspace.storefront.dto.StorefrontCheckoutResponse;
+import com.omkarsathe.outvoice.workspace.Workspace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,6 +39,10 @@ public class PublicStorefrontService {
     private final ProductRepository productRepository;
     private final StorefrontResponseMapper storefrontResponseMapper;
     private final StorefrontUrlService storefrontUrlService;
+    private final CustomerRepository customerRepository;
+    private final InvoiceService invoiceService;
+    private final InvoiceRepository invoiceRepository;
+    private final InvoiceAccessTokenService tokenService;
 
     @Transactional(readOnly = true)
     public PublicStorefrontDto resolveBySlug(String slug) {
@@ -104,5 +123,81 @@ public class PublicStorefrontService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
 
         return storefrontResponseMapper.toPublicProductDto(product);
+    }
+
+    @Transactional
+    public StorefrontCheckoutResponse checkout(UUID storefrontId, StorefrontCheckoutRequest request) {
+        Storefront storefront = storefrontRepository.findById(storefrontId)
+                .orElseThrow(() -> new ResourceNotFoundException("Storefront not found: " + storefrontId));
+
+        if (storefront.getStatus() != StorefrontStatus.PUBLISHED) {
+            throw new ResourceNotFoundException("Storefront is currently unavailable for orders");
+        }
+
+        Workspace workspace = storefront.getWorkspace();
+        UUID workspaceId = workspace.getId();
+
+        // 1. Find or create customer
+        String email = request.customerEmail().trim().toLowerCase();
+        Customer customer = customerRepository
+                .findByWorkspace_IdAndEmailIgnoreCaseAndDeletedAtIsNull(workspaceId, email)
+                .orElseGet(() -> {
+                    Customer newCustomer = Customer.builder()
+                            .workspace(workspace)
+                            .fullName(request.customerName().trim())
+                            .email(email)
+                            .mobile(request.customerMobile() != null && !request.customerMobile().isBlank() ? request.customerMobile().trim() : null)
+                            .address(request.customerAddress() != null && !request.customerAddress().isBlank() ? request.customerAddress().trim() : null)
+                            .build();
+                    return customerRepository.save(newCustomer);
+                });
+
+        // 2. Validate product items
+        List<CreateItem> invoiceItems = new ArrayList<>();
+        for (StorefrontCheckoutRequest.CartItemRequest itemReq : request.items()) {
+            Product product = productRepository.findById(itemReq.productId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemReq.productId()));
+
+            if (!product.getWorkspace().getId().equals(workspaceId) || product.getStatus() != ProductStatus.PUBLISHED) {
+                throw new ResourceNotFoundException("Product not available in this storefront: " + itemReq.productId());
+            }
+
+            invoiceItems.add(new CreateItem(
+                    product.getId(),
+                    product.getName(),
+                    product.getPrice(),
+                    itemReq.quantity()
+            ));
+        }
+
+        // 3. Create invoice with issue date = today, due date = 7 days from now
+        LocalDate issueDate = LocalDate.now();
+        LocalDate dueDate = issueDate.plusDays(7);
+        CreateInvoice createInvoice = new CreateInvoice(
+                customer.getId(),
+                issueDate,
+                dueDate,
+                BigDecimal.ZERO, // Tax
+                BigDecimal.ZERO, // Discount
+                invoiceItems,
+                false // Not draft -> created invoice
+        );
+
+        InvoiceResponse invoiceResponse = invoiceService.createInvoice(workspaceId, createInvoice);
+
+        // 4. Generate public access token
+        Invoice invoice = invoiceRepository.findById(invoiceResponse.id())
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceResponse.id()));
+        var token = tokenService.getOrCreateToken(invoice);
+
+        return new StorefrontCheckoutResponse(
+                invoice.getId(),
+                invoice.getInvoiceNumber(),
+                token.getTokenHash(),
+                invoice.getNetTotal(),
+                customer.getFullName(),
+                customer.getEmail(),
+                "Your order has been placed successfully!"
+        );
     }
 }

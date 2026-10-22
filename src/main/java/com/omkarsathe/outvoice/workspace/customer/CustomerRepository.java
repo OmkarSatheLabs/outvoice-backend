@@ -19,6 +19,8 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     Optional<Customer> findByIdAndWorkspace_Id(UUID id, UUID workspaceId);
 
+    Optional<Customer> findByWorkspace_IdAndEmailIgnoreCaseAndDeletedAtIsNull(UUID workspaceId, String email);
+
     @Query("""
                 SELECT DISTINCT c
                 FROM Customer c
