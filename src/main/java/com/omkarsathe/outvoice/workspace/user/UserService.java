@@ -9,6 +9,8 @@ import com.omkarsathe.outvoice.user.workspace.role.RoleNotFoundException;
 import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
 import com.omkarsathe.outvoice.workspace.WorkspaceResponseMapper;
 import com.omkarsathe.outvoice.workspace.WorkspaceResponse;
+import com.omkarsathe.outvoice.workspace.WorkspaceStatus;
+import com.omkarsathe.outvoice.workspace.member.Member;
 import com.omkarsathe.outvoice.workspace.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -90,7 +92,9 @@ public class UserService {
     public List<WorkspaceResponse> getWorkspaces(UUID userId) {
         return memberRepository.findByUserId(userId)
                 .stream()
-                .map(member -> workspaceResponseMapper.toResponse(member.getWorkspace()))
+                .map(Member::getWorkspace)
+                .filter(ws -> ws != null && ws.getDeletedAt() == null && ws.getStatus() == WorkspaceStatus.ACTIVE)
+                .map(workspaceResponseMapper::toResponse)
                 .toList();
     }
 

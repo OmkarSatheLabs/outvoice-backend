@@ -29,6 +29,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
         SELECT m
         FROM Member m
         JOIN FETCH m.user u
+        LEFT JOIN FETCH u.phoneCode pc
         WHERE m.workspace.id = :workspaceId
         ORDER BY u.fullName ASC
         """)
