@@ -1,32 +1,24 @@
 package com.omkarsathe.outvoice.auth;
 
 import com.omkarsathe.outvoice.auth.dto.AuthResponse;
-//import com.omkarsathe.outvoice.country.Country;
-//import com.omkarsathe.outvoice.country.CountryRepository;
-//import com.omkarsathe.outvoice.country.CountryService;
-//import com.omkarsathe.outvoice.currency.CurrencyEntity;
-//import com.omkarsathe.outvoice.currency.CurrencyRepository;
-//import com.omkarsathe.outvoice.currency.CurrencyService;
+import com.omkarsathe.outvoice.auth.mfa.MfaService;
+import com.omkarsathe.outvoice.auth.mfa.dto.MfaResendRequest;
+import com.omkarsathe.outvoice.auth.mfa.dto.MfaSetupResponse;
+import com.omkarsathe.outvoice.auth.mfa.dto.MfaVerifyRequest;
 import com.omkarsathe.outvoice.mail.MailRequest;
 import com.omkarsathe.outvoice.mail.MailService;
 import com.omkarsathe.outvoice.mail.MailType;
-import com.omkarsathe.outvoice.phone.PhoneCode;
 import com.omkarsathe.outvoice.phone.PhoneCodeRepository;
 import com.omkarsathe.outvoice.phone.PhoneCodeService;
 import com.omkarsathe.outvoice.security.JwtService;
-//import com.omkarsathe.outvoice.user.UserEntity;
-import com.omkarsathe.outvoice.workspace.user.UserRepository;
-//import com.omkarsathe.outvoice.user.UserService;
-//import com.omkarsathe.outvoice.user.dto.CreateUserRequestDto;
-//import com.omkarsathe.outvoice.user.workspace.UserWorkspaceRepository;
-//import com.omkarsathe.outvoice.user.workspace.UserWorkspaceService;
-//import com.omkarsathe.outvoice.user.workspace.dto.CreateUserWorkspaceRequestDto;
-import com.omkarsathe.outvoice.workspace.*;
-//import com.omkarsathe.outvoice.workspace.dto.CreateWorkspaceRequestDto;
-//import com.omkarsathe.outvoice.workspace.role.WorkspaceRole;
+import com.omkarsathe.outvoice.workspace.CreateWorkspace;
+import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
+import com.omkarsathe.outvoice.workspace.WorkspaceResponse;
+import com.omkarsathe.outvoice.workspace.WorkspaceService;
 import com.omkarsathe.outvoice.workspace.member.MemberService;
 import com.omkarsathe.outvoice.workspace.user.CreateUser;
 import com.omkarsathe.outvoice.workspace.user.User;
+import com.omkarsathe.outvoice.workspace.user.UserRepository;
 import com.omkarsathe.outvoice.workspace.user.UserResponse;
 import com.omkarsathe.outvoice.workspace.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -46,16 +38,8 @@ import java.util.logging.Logger;
 public class AuthService {
 
     private final PhoneCodeService phoneCodeService;
-//    private final CountryService countryService;
-//    private final UserService userService;
-//    private final WorkspaceService workspaceService;
-//    private final CurrencyService currencyService;
-//    private final UserWorkspaceService userWorkspaceService;
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
-//    private final UserWorkspaceRepository userWorkspaceRepository;
-//    private final CountryRepository countryRepository;
-//    private final CurrencyRepository currencyRepository;
     private final PhoneCodeRepository phoneCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -64,6 +48,7 @@ public class AuthService {
     private final WorkspaceService workspaceService;
     private final MemberService memberService;
     private final MailService mailService;
+    private final MfaService mfaService;
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
@@ -90,7 +75,7 @@ public class AuthService {
         MailRequest mailRequest = new MailRequest(user.email(), MailType.WELCOME, variables);
         mailService.queue(mailRequest);
 
-        return new AuthResponse(jwtService.generateToken(user.id().toString()));
+        return AuthResponse.ofToken(jwtService.generateToken(user.id().toString()));
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -115,6 +100,22 @@ public class AuthService {
             throw new BadCredentialsException(errorMessage);
         }
 
-        return new AuthResponse(jwtService.generateToken(user.getUsername()));
+        if (user.isMfaEnabled()) {
+            return mfaService.initiateLoginChallenge(user);
+        }
+
+        return AuthResponse.ofToken(jwtService.generateToken(user.getUsername()));
+    }
+
+    public AuthResponse verifyMfa(MfaVerifyRequest request) {
+        return mfaService.verifyLoginChallenge(request);
+    }
+
+    public Map<String, String> resendMfa(MfaResendRequest request) {
+        return mfaService.resendLoginChallenge(request);
+    }
+
+    public MfaSetupResponse fallbackEmailMfa(MfaResendRequest request) {
+        return mfaService.fallbackToEmail(request);
     }
 }

@@ -1,5 +1,13 @@
 package com.omkarsathe.outvoice.workspace.user;
 
+import com.omkarsathe.outvoice.audit.log.AuditAction;
+import com.omkarsathe.outvoice.audit.log.AuditResourceType;
+import com.omkarsathe.outvoice.audit.log.AuditService;
+import com.omkarsathe.outvoice.auth.mfa.MfaService;
+import com.omkarsathe.outvoice.auth.mfa.dto.MfaConfirmRequest;
+import com.omkarsathe.outvoice.auth.mfa.dto.MfaSetupResponse;
+import com.omkarsathe.outvoice.auth.mfa.dto.TotpConfirmRequest;
+import com.omkarsathe.outvoice.auth.mfa.dto.TotpSetupResponse;
 import com.omkarsathe.outvoice.common.exception.ResourceNotFoundException;
 import com.omkarsathe.outvoice.common.exception.UserAlreadyExistsException;
 import com.omkarsathe.outvoice.phone.PhoneCode;
@@ -7,12 +15,13 @@ import com.omkarsathe.outvoice.phone.PhoneCodeMapper;
 import com.omkarsathe.outvoice.phone.PhoneCodeService;
 import com.omkarsathe.outvoice.user.workspace.role.RoleNotFoundException;
 import com.omkarsathe.outvoice.workspace.WorkspaceRepository;
-import com.omkarsathe.outvoice.workspace.WorkspaceResponseMapper;
 import com.omkarsathe.outvoice.workspace.WorkspaceResponse;
+import com.omkarsathe.outvoice.workspace.WorkspaceResponseMapper;
 import com.omkarsathe.outvoice.workspace.WorkspaceStatus;
 import com.omkarsathe.outvoice.workspace.member.Member;
 import com.omkarsathe.outvoice.workspace.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +44,8 @@ public class UserService {
     private final UserProfileResponseMapper userProfileResponseMapper;
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceResponseMapper workspaceResponseMapper;
+    private final MfaService mfaService;
+    private final AuditService auditService;
 
     public UserResponse create(CreateUser request) {
         PhoneCode phoneCode = null;
@@ -104,10 +115,64 @@ public class UserService {
     }
 
     @Transactional
+    public void changePassword(UserDetails userDetails, ChangePasswordRequest request) {
+        User user = getAuthenticatedUser(userDetails);
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("New password cannot be the same as your current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        auditService.log(
+                null,
+                AuditAction.UPDATE,
+                AuditResourceType.USER,
+                user.getId(),
+                "User successfully updated secure credentials (password)",
+                null
+        );
+    }
+
+    @Transactional
     public UserProfileResponse getUserProfile(UserDetails userDetails) {
+        User user = getAuthenticatedUser(userDetails);
+        return userProfileResponseMapper.toUserProfileResponse(user);
+    }
+
+    public TotpSetupResponse initiateTotpSetup(UserDetails userDetails) {
+        User user = getAuthenticatedUser(userDetails);
+        return mfaService.initiateTotpSetup(user);
+    }
+
+    public void confirmTotpSetup(UserDetails userDetails, TotpConfirmRequest request) {
+        User user = getAuthenticatedUser(userDetails);
+        mfaService.confirmTotpSetup(user, request);
+    }
+
+    public MfaSetupResponse initiateEmailSetup(UserDetails userDetails) {
+        User user = getAuthenticatedUser(userDetails);
+        return mfaService.initiateEmailSetup(user);
+    }
+
+    public void confirmEmailSetup(UserDetails userDetails, MfaConfirmRequest request) {
+        User user = getAuthenticatedUser(userDetails);
+        mfaService.confirmEmailSetup(user, request);
+    }
+
+    public void disableMfa(UserDetails userDetails) {
+        User user = getAuthenticatedUser(userDetails);
+        mfaService.disableMfa(user);
+    }
+
+    private User getAuthenticatedUser(UserDetails userDetails) {
         UUID userId = UUID.fromString(userDetails.getUsername());
         return userRepository.findById(userId)
-                .map(userProfileResponseMapper::toUserProfileResponse)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     }
 }

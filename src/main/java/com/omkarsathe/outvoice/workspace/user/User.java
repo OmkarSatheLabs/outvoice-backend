@@ -38,11 +38,24 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String passwordHash;
 
+    @Column(name = "mfa_enabled", nullable = false)
+    @Builder.Default
+    private boolean mfaEnabled = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mfa_channel")
+    @Builder.Default
+    private MfaChannel mfaChannel = MfaChannel.EMAIL;
+
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Builder.Default
     private Set<Member> workspaceMemberships = new HashSet<>();
 
     @Override

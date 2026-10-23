@@ -10,6 +10,8 @@ public record UserProfileResponse(
         String mobile,
         PhoneCodeResponse phoneCode,
         String avatarUrl,
-        UUID userCountryId
+        UUID userCountryId,
+        boolean mfaEnabled,
+        MfaChannel mfaChannel
 ) {
 }

@@ -7,5 +7,6 @@ public enum AuditResourceType {
     WORKSPACE,
     PAYMENT_SETTINGS,
     MEMBER,
-    STOREFRONT
+    STOREFRONT,
+    USER
 }
